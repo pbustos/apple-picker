@@ -49,7 +49,7 @@ class SpecificWorker(GenericWorker):
         self.pr.start()
         
         self.robot = TurtleBot()
-        self.drone = Object('Quadricopter')
+        self.drone = Shape('Quadricopter')
         cam = VisionSensor("frontCamera")
         self.camera = { "handle": cam,
                         "id": 0,
@@ -130,7 +130,7 @@ class SpecificWorker(GenericWorker):
 
     #################################################################################
     def move_quad_target(self, vels):
-        target = Dummy('Quadricopter_target')
+        target = Shape('Quadricopter_target')
         adv, side, height, rot = vels
         current_pos = target.get_position(self.drone)
         current_ori = target.get_orientation(self.drone)
