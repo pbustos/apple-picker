@@ -50,15 +50,17 @@ class SpecificWorker(GenericWorker):
         
         self.robot = TurtleBot()
         self.drone = Object('Quadricopter')
-        cam = VisionSensor("frontCamera")
-        self.camera = { "handle": cam,
-                        "id": 0,
-                        "angle": np.radians(cam.get_perspective_angle()),
-                        "width": cam.get_resolution()[0],
-                        "height": cam.get_resolution()[1],
-                        "focal": (cam.get_resolution()[0] / 2) / np.tan(np.radians(cam.get_perspective_angle() / 2)),
-                        "rgb": np.array(0),
-                        "depth": np.ndarray(0)}
+        self.cameras = {}
+        self.front_camera_name = "frontCamera"
+        cam = VisionSensor(self.front_camera_name)
+        self.cameras["frontCamera"] = {"handle": cam,
+                                       "id": 0,
+                                       "angle": np.radians(cam.get_perspective_angle()),
+                                       "width": cam.get_resolution()[0],
+                                       "height": cam.get_resolution()[1],
+                                       "focal": (cam.get_resolution()[0] / 2) / np.tan(np.radians(cam.get_perspective_angle() / 2)),
+                                       "rgb": np.array(0),
+                                       "depth": np.ndarray(0)}
 
         self.joystick_newdata = []
         self.speed_robot = []
@@ -73,7 +75,7 @@ class SpecificWorker(GenericWorker):
         start = time.time()
         while True:
             self.pr.step()
-            self.read_camera(self.camera)
+            self.read_camera(self.cameras[self.front_camera_name])
             self.read_joystick()
 
             elapsed = time.time()-start
@@ -98,10 +100,10 @@ class SpecificWorker(GenericWorker):
                                                        focalx=cam["focal"], focaly=cam["focal"],
                                                        alivetime=time.time(), depthFactor=1.0, depth=depth.tobytes())
 
-        # try:
-        #     self.camerargbdsimplepub_proxy.pushRGBD(cam["rgb"], cam["depth"])
-        # except Ice.Exception as e:
-        #     print(e)
+        #try:
+        #    self.camerargbdsimplepub_proxy.pushRGBD(cam["rgb"], cam["depth"])
+        #except Ice.Exception as e:
+        #    print(e)
 
     ###########################################
     ### JOYSITCK read and move the robot

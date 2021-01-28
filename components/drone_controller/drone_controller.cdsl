@@ -1,0 +1,14 @@
+import "CameraRGBDSimple.idsl";
+
+Component drone_controller
+{
+    Communications
+    {
+        requires CameraRGBDSimple;
+    };
+    language python;
+    gui Qt(QMainWindow);
+    statemachine "statemachine.smdsl";
+
+};
+
