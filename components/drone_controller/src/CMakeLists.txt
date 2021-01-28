@@ -3,4 +3,4 @@ PROJECT(  drone_controller )
 
 INCLUDE( /opt/robocomp/cmake/robocomp.cmake )
 
-ROBOCOMP_IDSL_TO_ICE( CommonBehavior CameraRGBDSimple )
+ROBOCOMP_IDSL_TO_ICE( CommonBehavior CameraRGBDSimple JoystickAdapter )

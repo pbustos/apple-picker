@@ -1,10 +1,12 @@
 import "CameraRGBDSimple.idsl";
+import "JoystickAdapter.idsl";
 
 Component drone_controller
 {
     Communications
     {
         requires CameraRGBDSimple;
+        publishes JoystickAdapter;
     };
     language python;
     gui Qt(QMainWindow);

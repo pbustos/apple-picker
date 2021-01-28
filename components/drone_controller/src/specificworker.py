@@ -61,16 +61,17 @@ class SpecificWorker(GenericWorker):
     def compute(self):
         print("Entered state compute")
         all = self.camerargbdsimple_proxy.getAll(self.camera_name)
-        color_ = all.image
-        depth_ = all.depth
-        color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
-        self.draw_image(color)
+        self.draw_image(all.image)
 
+        # code to send data to drone_pyrep. See ~/robocomp/interfaces/IDSLs/JoystickAdapter.idsl 
+        #joy_data = RoboCompJoystickAdapter.TData()
+        #self.joystickadapter_proxy.sendData()
     # ===================================================================
-    def draw_image(self, img):
+    def draw_image(self, color_):
+        color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         plt.figure(1);
         plt.clf()
-        plt.imshow(img)
+        plt.imshow(color)
         plt.title('Front Camera ')
         plt.pause(.1)
 
