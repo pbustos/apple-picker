@@ -49,7 +49,7 @@ class SpecificWorker(GenericWorker):
         self.pr.start()
         
         self.robot = TurtleBot()
-        self.drone = Object('Quadricopter')
+        self.drone = Shape('Quadricopter')
         self.cameras = {}
         self.front_camera_name = "frontCamera"
         cam = VisionSensor(self.front_camera_name)
@@ -106,7 +106,7 @@ class SpecificWorker(GenericWorker):
         #    print(e)
 
     ###########################################
-    ### JOYSITCK read and move the robot
+    ### JOYSTICK read and move the robot
     ###########################################
     def read_joystick(self):
         if self.joystick_newdata: #and (time.time() - self.joystick_newdata[1]) > 0.1:
@@ -132,7 +132,7 @@ class SpecificWorker(GenericWorker):
 
     #################################################################################
     def move_quad_target(self, vels):
-        target = Dummy('Quadricopter_target')
+        target = Shape('Quadricopter_target')
         adv, side, height, rot = vels
         current_pos = target.get_position(self.drone)
         current_ori = target.get_orientation(self.drone)

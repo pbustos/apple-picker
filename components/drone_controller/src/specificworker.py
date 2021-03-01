@@ -22,11 +22,11 @@
 from PySide2.QtCore import QTimer
 from PySide2.QtWidgets import QApplication
 from genericworker import *
-import cv2
+import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-
+import math
 
 class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map, startup_check=False):
@@ -36,7 +36,8 @@ class SpecificWorker(GenericWorker):
         self.image = []
         self.depth = []
         self.camera_name = "frontCamera"
-
+        self.data = {}
+        
         self.Period = 100
         if startup_check:
             self.startup_check()
@@ -62,10 +63,15 @@ class SpecificWorker(GenericWorker):
         print("Entered state compute")
         all = self.camerargbdsimple_proxy.getAll(self.camera_name)
         self.draw_image(all.image)
-
+        self.circleDetect(all.image)
+        
         # code to send data to drone_pyrep. See ~/robocomp/interfaces/IDSLs/JoystickAdapter.idsl 
         #joy_data = RoboCompJoystickAdapter.TData()
         #self.joystickadapter_proxy.sendData()
+        
+       
+        
+        
     # ===================================================================
     def draw_image(self, color_):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
@@ -74,6 +80,33 @@ class SpecificWorker(GenericWorker):
         plt.imshow(color)
         plt.title('Front Camera ')
         plt.pause(.1)
+
+
+    def circleDetect(self, color_):
+        color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
+        cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
+        plt.imshow(color);
+        color = cv.cvtColor(color, cv.COLOR_RGB2BGR)
+        gray = cv.cvtColor(color, cv.COLOR_BGR2GRAY)
+        color = cv.cvtColor(color, cv.COLOR_BGR2RGB)
+        gray = cv.medianBlur(gray, 5)
+
+        rows = gray.shape[0]
+        circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=5, maxRadius=50)
+        if circles is not None:
+            detected_circles = np.uint16(np.around(circles))
+            for (x, y, r) in detected_circles[0]:
+                cv.circle(color, (x, y), r, (0, 255, 0), 3)
+                cv.circle(color, (x, y), 2, (0, 255, 0), 3)
+                plt.figure(1);
+                plt.clf()
+                plt.imshow(color);
+                plt.title('OpenCV Camera ')
+                plt.pause(.1)
+                #plt.waitforbuttonpress(5)
+                break
+        cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
+        plt.imshow(color);
 
     def startup_check(self):
         QTimer.singleShot(200, QApplication.instance().quit)
@@ -109,3 +142,24 @@ class SpecificWorker(GenericWorker):
         print("Entered state finalize")
         pass
 
+######################
+    # From the RoboCompCameraRGBDSimple you can call this methods:
+    # self.camerargbdsimple_proxy.getAll(...)
+    # self.camerargbdsimple_proxy.getDepth(...)
+    # self.camerargbdsimple_proxy.getImage(...)
+
+    ######################
+    # From the RoboCompCameraRGBDSimple you can use this types:
+    # RoboCompCameraRGBDSimple.TImage
+    # RoboCompCameraRGBDSimple.TDepth
+    # RoboCompCameraRGBDSimple.TRGBD
+
+    ######################
+    # From the RoboCompJoystickAdapter you can publish calling this methods:
+    # self.joystickadapter_proxy.sendData(...)
+
+    ######################
+    # From the RoboCompJoystickAdapter you can use this types:
+    # RoboCompJoystickAdapter.AxisParams
+    # RoboCompJoystickAdapter.ButtonParams
+    # RoboCompJoystickAdapter.TData
