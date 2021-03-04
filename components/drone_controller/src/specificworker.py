@@ -27,6 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import math
+import imutils
 
 class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map, startup_check=False):
@@ -62,7 +63,7 @@ class SpecificWorker(GenericWorker):
     def compute(self):
         print("Entered state compute")
         all = self.camerargbdsimple_proxy.getAll(self.camera_name)
-        self.draw_image(all.image)
+        #self.draw_image(all.image)
         self.circleDetect(all.image)
         
         # code to send data to drone_pyrep. See ~/robocomp/interfaces/IDSLs/JoystickAdapter.idsl 
@@ -81,32 +82,37 @@ class SpecificWorker(GenericWorker):
         plt.title('Front Camera ')
         plt.pause(.1)
 
-
     def circleDetect(self, color_):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
         plt.imshow(color);
         color = cv.cvtColor(color, cv.COLOR_RGB2BGR)
-        gray = cv.cvtColor(color, cv.COLOR_BGR2GRAY)
-        color = cv.cvtColor(color, cv.COLOR_BGR2RGB)
-        gray = cv.medianBlur(gray, 5)
+        
+        hsv = cv.cvtColor(color, cv.COLOR_BGR2HSV)
+        lower_red_range = np.array([0, 50, 120])
+        upper_red_range = np.array([10, 255, 255])
+        mask = cv.inRange(hsv, lower_red_range, upper_red_range)
+        # Find contours
+        cnts = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts) 
+        # Iterate through contours and filter by the number of vertices 
+        for c in cnts:
+            area = cv.contourArea(c)
+            if area > 1000: 
+                cv.drawContours(color,[c],-1,(0,255,0), 2)
+                M = cv.moments(c)
+                x = int(M["m10"]/ M["m00"])
+                y = int(M["m01"]/ M["m00"])
 
-        rows = gray.shape[0]
-        circles = cv.HoughCircles(gray, cv.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=5, maxRadius=50)
-        if circles is not None:
-            detected_circles = np.uint16(np.around(circles))
-            for (x, y, r) in detected_circles[0]:
-                cv.circle(color, (x, y), r, (0, 255, 0), 3)
-                cv.circle(color, (x, y), 2, (0, 255, 0), 3)
-                plt.figure(1);
-                plt.clf()
-                plt.imshow(color);
-                plt.title('OpenCV Camera ')
-                plt.pause(.1)
-                #plt.waitforbuttonpress(5)
-                break
-        cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
+                cv.circle(color,(x,y),2,(0,255,0), 2)
+                # cv.putText(color, "rojo", (x-20, y-20), cv.FONT_HERSHEY_SIMPLEX,2, (255,255,255), 2)
+
+        color = cv.cvtColor(color, cv.COLOR_BGR2RGB)
+        plt.figure(1);
+        plt.clf()
         plt.imshow(color);
+        plt.title('OpenCV Camera ')
+        plt.pause(.001)
 
     def startup_check(self):
         QTimer.singleShot(200, QApplication.instance().quit)
