@@ -62,7 +62,6 @@ import time
 import os
 import copy
 import argparse
-from termcolor import colored
 # Ctrl+c handling
 import signal
 
@@ -164,6 +163,10 @@ if __name__ == '__main__':
     else:
         print("Error getting required connections, check config file")
         sys.exit(-1)
+
+    adapter = ic.createObjectAdapter('CoppeliaUtils')
+    adapter.add(coppeliautilsI.CoppeliaUtilsI(worker), ic.stringToIdentity('coppeliautils'))
+    adapter.activate()
 
     signal.signal(signal.SIGINT, sigint_handler)
     app.exec_()

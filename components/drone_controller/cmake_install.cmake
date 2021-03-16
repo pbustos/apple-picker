@@ -1,4 +1,4 @@
-# Install script for directory: /home/borja/drone_controller
+# Install script for directory: /home/borja/apple-picker/components/drone_controller
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/borja/drone_controller/src/cmake_install.cmake")
+  include("/home/borja/apple-picker/components/drone_controller/src/cmake_install.cmake")
 
 endif()
 
@@ -51,5 +51,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/borja/drone_controller/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/borja/apple-picker/components/drone_controller/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

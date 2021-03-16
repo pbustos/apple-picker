@@ -19,7 +19,7 @@ module RoboCompCoppeliaUtils
 		float ry;
 		float rz;
 	};
-	enum TargetTypes {  Info, Hand, HeadCamera  };
+	enum TargetTypes {Info,Hand,HeadCamera};
 	interface CoppeliaUtils
 	{
 		void addOrModifyDummy (TargetTypes type, string name, PoseType pose);

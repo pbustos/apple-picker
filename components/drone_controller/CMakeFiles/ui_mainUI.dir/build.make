@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/borja/drone_controller
+CMAKE_SOURCE_DIR = /home/borja/apple-picker/components/drone_controller
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/borja/drone_controller
+CMAKE_BINARY_DIR = /home/borja/apple-picker/components/drone_controller
 
 # Utility rule file for ui_mainUI.
 
@@ -57,8 +57,8 @@ CMakeFiles/ui_mainUI: src/ui_mainUI.py
 
 
 src/ui_mainUI.py: src/mainUI.ui
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/borja/drone_controller/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating src/ui_mainUI.py from src/mainUI.ui"
-	pyside2-uic /home/borja/drone_controller/src/mainUI.ui -o /home/borja/drone_controller/src/ui_mainUI.py
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/borja/apple-picker/components/drone_controller/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating src/ui_mainUI.py from src/mainUI.ui"
+	pyside2-uic /home/borja/apple-picker/components/drone_controller/src/mainUI.ui -o /home/borja/apple-picker/components/drone_controller/src/ui_mainUI.py
 
 ui_mainUI: CMakeFiles/ui_mainUI
 ui_mainUI: src/ui_mainUI.py
@@ -76,6 +76,6 @@ CMakeFiles/ui_mainUI.dir/clean:
 .PHONY : CMakeFiles/ui_mainUI.dir/clean
 
 CMakeFiles/ui_mainUI.dir/depend:
-	cd /home/borja/drone_controller && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/borja/drone_controller /home/borja/drone_controller /home/borja/drone_controller /home/borja/drone_controller /home/borja/drone_controller/CMakeFiles/ui_mainUI.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/borja/apple-picker/components/drone_controller && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/borja/apple-picker/components/drone_controller /home/borja/apple-picker/components/drone_controller /home/borja/apple-picker/components/drone_controller /home/borja/apple-picker/components/drone_controller /home/borja/apple-picker/components/drone_controller/CMakeFiles/ui_mainUI.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/ui_mainUI.dir/depend
 

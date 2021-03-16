@@ -60,6 +60,9 @@ ICES__home_borja_apple-picker_components_drone_controller_src: src/CMakeFiles/IC
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating CameraRGBDSimple.ice from /home/borja/robocomp/interfaces/IDSLs/CameraRGBDSimple.idsl"
 	cd /home/borja/apple-picker/components/drone_controller/src && robocompdsl /home/borja/robocomp/interfaces/IDSLs/CameraRGBDSimple.idsl /home/borja/apple-picker/components/drone_controller/src/CameraRGBDSimple.ice
 	cd /home/borja/apple-picker/components/drone_controller/src && robocompdsl /home/borja/robocomp/interfaces/IDSLs/CameraRGBDSimple.idsl CameraRGBDSimple.ice
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating CoppeliaUtils.ice from /home/borja/robocomp/interfaces/IDSLs/CoppeliaUtils.idsl"
+	cd /home/borja/apple-picker/components/drone_controller/src && robocompdsl /home/borja/robocomp/interfaces/IDSLs/CoppeliaUtils.idsl /home/borja/apple-picker/components/drone_controller/src/CoppeliaUtils.ice
+	cd /home/borja/apple-picker/components/drone_controller/src && robocompdsl /home/borja/robocomp/interfaces/IDSLs/CoppeliaUtils.idsl CoppeliaUtils.ice
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating JoystickAdapter.ice from /home/borja/robocomp/interfaces/IDSLs/JoystickAdapter.idsl"
 	cd /home/borja/apple-picker/components/drone_controller/src && robocompdsl /home/borja/robocomp/interfaces/IDSLs/JoystickAdapter.idsl /home/borja/apple-picker/components/drone_controller/src/JoystickAdapter.ice
 	cd /home/borja/apple-picker/components/drone_controller/src && robocompdsl /home/borja/robocomp/interfaces/IDSLs/JoystickAdapter.idsl JoystickAdapter.ice

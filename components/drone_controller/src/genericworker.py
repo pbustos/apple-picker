@@ -33,6 +33,8 @@ import RoboCompCommonBehavior
 
 Ice.loadSlice("-I ./src/ --all ./src/CameraRGBDSimple.ice")
 import RoboCompCameraRGBDSimple
+Ice.loadSlice("-I ./src/ --all ./src/CoppeliaUtils.ice")
+import RoboCompCoppeliaUtils
 Ice.loadSlice("-I ./src/ --all ./src/JoystickAdapter.ice")
 import RoboCompJoystickAdapter
 
@@ -114,7 +116,6 @@ setattr(RoboCompJoystickAdapter, "ButtonsList", ButtonsList)
 
 
 
-
 try:
     from ui_mainUI import *
 except:
@@ -141,7 +142,7 @@ class GenericWorker(QtWidgets.QMainWindow):
 
         self.ui = Ui_guiDlg()
         self.ui.setupUi(self)
-        #self.show()
+        self.show()
 
         self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
         self.Period = 30

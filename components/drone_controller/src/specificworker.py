@@ -11,7 +11,7 @@
 #    (at your option) any later version.
 #
 #    RoboComp is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    but WITHOUT ANY WARRANTY without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 #
@@ -29,9 +29,11 @@ import matplotlib.image as mpimg
 import math
 import imutils
 
+
 class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map, startup_check=False):
         super(SpecificWorker, self).__init__(proxy_map)
+        
 
         # image
         self.image = []
@@ -66,6 +68,15 @@ class SpecificWorker(GenericWorker):
         #self.draw_image(all.image)
         self.circleDetect(all.image)
         
+        #Prueba de movimiento del Dummy
+        self.poseT = RoboCompCoppeliaUtils.PoseType(x = 1000,
+                                                    y = 0,
+                                                    z = 0,
+                                                    rx = 0,
+                                                    ry = 0,
+                                                    rz = 0)
+        self.hc = RoboCompCoppeliaUtils.TargetTypes.HeadCamera
+        self.CoppeliaUtils_addOrModifyDummy(self.hc, self.camera_name, self.poseT)
         # code to send data to drone_pyrep. See ~/robocomp/interfaces/IDSLs/JoystickAdapter.idsl 
         #joy_data = RoboCompJoystickAdapter.TData()
         #self.joystickadapter_proxy.sendData()
@@ -76,7 +87,7 @@ class SpecificWorker(GenericWorker):
     # ===================================================================
     def draw_image(self, color_):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
-        plt.figure(1);
+        plt.figure(1)
         plt.clf()
         plt.imshow(color)
         plt.title('Front Camera ')
@@ -85,7 +96,7 @@ class SpecificWorker(GenericWorker):
     def circleDetect(self, color_):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
-        plt.imshow(color);
+        plt.imshow(color)
         color = cv.cvtColor(color, cv.COLOR_RGB2BGR)
         
         hsv = cv.cvtColor(color, cv.COLOR_BGR2HSV)
@@ -108,9 +119,9 @@ class SpecificWorker(GenericWorker):
                 # cv.putText(color, "rojo", (x-20, y-20), cv.FONT_HERSHEY_SIMPLEX,2, (255,255,255), 2)
 
         color = cv.cvtColor(color, cv.COLOR_BGR2RGB)
-        plt.figure(1);
+        plt.figure(1)
         plt.clf()
-        plt.imshow(color);
+        plt.imshow(color)
         plt.title('OpenCV Camera ')
         plt.pause(.001)
 
@@ -148,24 +159,3 @@ class SpecificWorker(GenericWorker):
         print("Entered state finalize")
         pass
 
-######################
-    # From the RoboCompCameraRGBDSimple you can call this methods:
-    # self.camerargbdsimple_proxy.getAll(...)
-    # self.camerargbdsimple_proxy.getDepth(...)
-    # self.camerargbdsimple_proxy.getImage(...)
-
-    ######################
-    # From the RoboCompCameraRGBDSimple you can use this types:
-    # RoboCompCameraRGBDSimple.TImage
-    # RoboCompCameraRGBDSimple.TDepth
-    # RoboCompCameraRGBDSimple.TRGBD
-
-    ######################
-    # From the RoboCompJoystickAdapter you can publish calling this methods:
-    # self.joystickadapter_proxy.sendData(...)
-
-    ######################
-    # From the RoboCompJoystickAdapter you can use this types:
-    # RoboCompJoystickAdapter.AxisParams
-    # RoboCompJoystickAdapter.ButtonParams
-    # RoboCompJoystickAdapter.TData

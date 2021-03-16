@@ -1,10 +1,12 @@
 import "CameraRGBDSimple.idsl";
 import "JoystickAdapter.idsl";
+import "CoppeliaUtils.idsl";
 
 Component drone_controller
 {
     Communications
     {
+        implements CoppeliaUtils;
         requires CameraRGBDSimple;
         publishes JoystickAdapter;
     };
