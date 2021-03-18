@@ -35,8 +35,6 @@ Ice.loadSlice("-I ./src/ --all ./src/CameraRGBDSimple.ice")
 import RoboCompCameraRGBDSimple
 Ice.loadSlice("-I ./src/ --all ./src/CoppeliaUtils.ice")
 import RoboCompCoppeliaUtils
-Ice.loadSlice("-I ./src/ --all ./src/JoystickAdapter.ice")
-import RoboCompJoystickAdapter
 
 class ImgType(list):
     def __init__(self, iterable=list()):
@@ -76,43 +74,6 @@ class DepthType(list):
 
 setattr(RoboCompCameraRGBDSimple, "DepthType", DepthType)
 
-class AxisList(list):
-    def __init__(self, iterable=list()):
-        super(AxisList, self).__init__(iterable)
-
-    def append(self, item):
-        assert isinstance(item, RoboCompJoystickAdapter.AxisParams)
-        super(AxisList, self).append(item)
-
-    def extend(self, iterable):
-        for item in iterable:
-            assert isinstance(item, RoboCompJoystickAdapter.AxisParams)
-        super(AxisList, self).extend(iterable)
-
-    def insert(self, index, item):
-        assert isinstance(item, RoboCompJoystickAdapter.AxisParams)
-        super(AxisList, self).insert(index, item)
-
-setattr(RoboCompJoystickAdapter, "AxisList", AxisList)
-
-class ButtonsList(list):
-    def __init__(self, iterable=list()):
-        super(ButtonsList, self).__init__(iterable)
-
-    def append(self, item):
-        assert isinstance(item, RoboCompJoystickAdapter.ButtonParams)
-        super(ButtonsList, self).append(item)
-
-    def extend(self, iterable):
-        for item in iterable:
-            assert isinstance(item, RoboCompJoystickAdapter.ButtonParams)
-        super(ButtonsList, self).extend(iterable)
-
-    def insert(self, index, item):
-        assert isinstance(item, RoboCompJoystickAdapter.ButtonParams)
-        super(ButtonsList, self).insert(index, item)
-
-setattr(RoboCompJoystickAdapter, "ButtonsList", ButtonsList)
 
 
 
@@ -127,18 +88,12 @@ except:
 class GenericWorker(QtWidgets.QMainWindow):
 
     kill = QtCore.Signal()
-    #Signals for State Machine
-    t_initialize_to_compute = QtCore.Signal()
-    t_compute_to_compute = QtCore.Signal()
-    t_compute_to_finalize = QtCore.Signal()
-
-    #-------------------------
 
     def __init__(self, mprx):
         super(GenericWorker, self).__init__()
 
         self.camerargbdsimple_proxy = mprx["CameraRGBDSimpleProxy"]
-        self.joystickadapter_proxy = mprx["JoystickAdapterPub"]
+        self.coppeliautils_proxy = mprx["CoppeliaUtilsProxy"]
 
         self.ui = Ui_guiDlg()
         self.ui.setupUi(self)
@@ -148,48 +103,7 @@ class GenericWorker(QtWidgets.QMainWindow):
         self.Period = 30
         self.timer = QtCore.QTimer(self)
 
-        #State Machine
-        self.defaultMachine= QtCore.QStateMachine()
-        self.compute_state = QtCore.QState(self.defaultMachine)
-        self.initialize_state = QtCore.QState(self.defaultMachine)
 
-        self.finalize_state = QtCore.QFinalState(self.defaultMachine)
-
-
-        #------------------
-        #Initialization State machine
-        self.initialize_state.addTransition(self.t_initialize_to_compute, self.compute_state)
-        self.compute_state.addTransition(self.t_compute_to_compute, self.compute_state)
-        self.compute_state.addTransition(self.t_compute_to_finalize, self.finalize_state)
-
-
-        self.compute_state.entered.connect(self.sm_compute)
-        self.initialize_state.entered.connect(self.sm_initialize)
-        self.finalize_state.entered.connect(self.sm_finalize)
-        self.timer.timeout.connect(self.t_compute_to_compute)
-
-        self.defaultMachine.setInitialState(self.initialize_state)
-
-        #------------------
-
-    #Slots funtion State Machine
-
-    @QtCore.Slot()
-    def sm_compute(self):
-        print("Error: lack sm_compute in Specificworker")
-        sys.exit(-1)
-
-    @QtCore.Slot()
-    def sm_initialize(self):
-        print("Error: lack sm_initialize in Specificworker")
-        sys.exit(-1)
-
-    @QtCore.Slot()
-    def sm_finalize(self):
-        print("Error: lack sm_finalize in Specificworker")
-        sys.exit(-1)
-
-    #-------------------------
     @QtCore.Slot()
     def killYourSelf(self):
         rDebug("Killing myself")

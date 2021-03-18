@@ -1,18 +1,14 @@
 import "CameraRGBDSimple.idsl";
-import "JoystickAdapter.idsl";
 import "CoppeliaUtils.idsl";
 
 Component drone_controller
 {
     Communications
     {
-        implements CoppeliaUtils;
-        requires CameraRGBDSimple;
-        publishes JoystickAdapter;
+        requires CameraRGBDSimple, CoppeliaUtils;
     };
     language python;
     gui Qt(QMainWindow);
-    statemachine "statemachine.smdsl";
 
 };
 

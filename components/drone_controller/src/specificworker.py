@@ -68,18 +68,9 @@ class SpecificWorker(GenericWorker):
         #self.draw_image(all.image)
         self.circleDetect(all.image)
         
-        #Prueba de movimiento del Dummy
-        self.poseT = RoboCompCoppeliaUtils.PoseType(x = 1000,
-                                                    y = 0,
-                                                    z = 0,
-                                                    rx = 0,
-                                                    ry = 0,
-                                                    rz = 0)
-        self.hc = RoboCompCoppeliaUtils.TargetTypes.HeadCamera
-        self.CoppeliaUtils_addOrModifyDummy(self.hc, self.camera_name, self.poseT)
         # code to send data to drone_pyrep. See ~/robocomp/interfaces/IDSLs/JoystickAdapter.idsl 
-        #joy_data = RoboCompJoystickAdapter.TData()
-        #self.joystickadapter_proxy.sendData()
+        joy_data = RoboCompJoystickAdapter.TData()
+        self.joystickadapter_proxy.sendData()
         
        
         
