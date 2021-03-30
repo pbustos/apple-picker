@@ -95,9 +95,9 @@ class GenericWorker(QtWidgets.QMainWindow):
         self.camerargbdsimple_proxy = mprx["CameraRGBDSimpleProxy"]
         self.coppeliautils_proxy = mprx["CoppeliaUtilsProxy"]
 
-        self.ui = Ui_guiDlg()
-        self.ui.setupUi(self)
-        self.show()
+        # self.ui = Ui_guiDlg()
+        # self.ui.setupUi(self)
+        # self.show()
 
         self.mutex = QtCore.QMutex(QtCore.QMutex.Recursive)
         self.Period = 30

@@ -9,6 +9,5 @@ Component drone_controller
     };
     language python;
     gui Qt(QMainWindow);
-
 };
 

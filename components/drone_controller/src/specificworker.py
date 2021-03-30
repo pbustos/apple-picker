@@ -34,7 +34,6 @@ class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map, startup_check=False):
         super(SpecificWorker, self).__init__(proxy_map)
         
-
         # image
         self.image = []
         self.depth = []
@@ -45,9 +44,8 @@ class SpecificWorker(GenericWorker):
         if startup_check:
             self.startup_check()
         else:
+            self.timer.timeout.connect(self.compute)
             self.timer.start(self.Period)
-            self.defaultMachine.start()
-            self.destroyed.connect(self.t_compute_to_finalize)
 
     def __del__(self):
         print('SpecificWorker destructor')
@@ -65,15 +63,42 @@ class SpecificWorker(GenericWorker):
     def compute(self):
         print("Entered state compute")
         all = self.camerargbdsimple_proxy.getAll(self.camera_name)
-        #self.draw_image(all.image)
-        self.circleDetect(all.image)
+        self.image = all.image
+        self.depth = all.depth
+        x, y = self.circleDetect(self.image)
+        print("Mark is on X: 256 Y: 256")
+        print("Value X: " ,x)
+        print("Value Y: " ,y)
+    
+
+        # Depth processing
+        # Max value: 10.0       Min value from apple: 0.20
+        if len(self.depth.depth) <= 1048576:
+            print(" tamaño: ", len(self.depth.depth))
+            depth_array = np.frombuffer(self.depth.depth,dtype=np.float32).reshape(self.depth.height, 
+                self.depth.width)
+            print("height: ", self.depth.height)
+            print("width: ", self.depth.width)
+            print("depht_array:  ", depth_array[220][220])
+        try: 
+            # x = adv           rx: None
+            # y = side          ry: None
+            # z = height        rz: rotate
+
+            self.pt = RoboCompCoppeliaUtils.PoseType()
+            headCamera = RoboCompCoppeliaUtils.TargetTypes.HeadCamera
+            self.coppeliautils_proxy.addOrModifyDummy(headCamera, "Quadricopter_target", self.pt)
+            
+
+        except Ice.Exception as e:
+            print(e)
+
+        # RoboCompCoppeliaUtils.CoppeliaUtils.addOrModifyDummy(self, self.headCamera, self.camera_name, self.pt) 
+        # code to send data to drone_pyrep. See ~/robocomp/interfaces/IDSLs/JoystickAdapter.idsl
+        # joy_data = RoboCompJoystickAdapter.TData()
+        # self.joystickadapter_proxy.sendData()
         
-        # code to send data to drone_pyrep. See ~/robocomp/interfaces/IDSLs/JoystickAdapter.idsl 
-        joy_data = RoboCompJoystickAdapter.TData()
-        self.joystickadapter_proxy.sendData()
-        
-       
-        
+    
         
     # ===================================================================
     def draw_image(self, color_):
@@ -85,7 +110,10 @@ class SpecificWorker(GenericWorker):
         plt.pause(.1)
 
     def circleDetect(self, color_):
+        x = 0
+        y = 0
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
+        #Marker is on X: 256 Y:256
         cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
         plt.imshow(color)
         color = cv.cvtColor(color, cv.COLOR_RGB2BGR)
@@ -115,9 +143,11 @@ class SpecificWorker(GenericWorker):
         plt.imshow(color)
         plt.title('OpenCV Camera ')
         plt.pause(.001)
+        return (x, y)
 
     def startup_check(self):
         QTimer.singleShot(200, QApplication.instance().quit)
+
 
     # =============== Slots methods for State Machine ===================
     # ===================================================================
@@ -150,3 +180,4 @@ class SpecificWorker(GenericWorker):
         print("Entered state finalize")
         pass
 
+ 
