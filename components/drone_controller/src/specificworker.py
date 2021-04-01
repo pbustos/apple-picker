@@ -34,12 +34,22 @@ class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map, startup_check=False):
         super(SpecificWorker, self).__init__(proxy_map)
         
-        # image
+        # Drone
+        self.state = 1
+        self.x = 0
+        self.y = 0
+        self.pose = {}
+        self.switch = {
+            1:self.idle(),
+            2:self.movex()
+        }
+        # Image
         self.image = []
         self.depth = []
         self.camera_name = "frontCamera"
         self.data = {}
-        
+        self.depth_array = []
+        #Timer
         self.Period = 100
         if startup_check:
             self.startup_check()
@@ -61,33 +71,36 @@ class SpecificWorker(GenericWorker):
 
     @QtCore.Slot()
     def compute(self):
-        print("Entered state compute")
         all = self.camerargbdsimple_proxy.getAll(self.camera_name)
         self.image = all.image
         self.depth = all.depth
-        x, y = self.circleDetect(self.image)
-        print("Mark is on X: 256 Y: 256")
-        print("Value X: " ,x)
-        print("Value Y: " ,y)
+        self.x, self.y = self.circleDetect(self.image)
+        # print("Value X: " ,self.x)
+        # print("Value Y: " ,self.y)
     
 
         # Depth processing
-        # Max value: 10.0       Min value from apple: 0.20
+        # Max value: 10.0       Min value from apple: 0.19
         if len(self.depth.depth) <= 1048576:
-            print(" tamaño: ", len(self.depth.depth))
-            depth_array = np.frombuffer(self.depth.depth,dtype=np.float32).reshape(self.depth.height, 
+            self.depth_array = np.frombuffer(self.depth.depth,dtype=np.float32).reshape(self.depth.height, 
                 self.depth.width)
-            print("height: ", self.depth.height)
-            print("width: ", self.depth.width)
-            print("depht_array:  ", depth_array[220][220])
+            
         try: 
-            # x = adv           rx: None
-            # y = side          ry: None
-            # z = height        rz: rotate
-
-            self.pt = RoboCompCoppeliaUtils.PoseType()
-            headCamera = RoboCompCoppeliaUtils.TargetTypes.HeadCamera
-            self.coppeliautils_proxy.addOrModifyDummy(headCamera, "Quadricopter_target", self.pt)
+            
+            if self.state == 1:
+                self.idle()
+            elif self.state == 2:
+                self.movex()
+            elif self.state == 3:
+                self.movey()
+            elif self.state == 4:
+                self.advance()
+            elif self.state == 5:
+                self.drop()
+            elif self.state == 6:
+                self.stop()                
+            else:
+                self.error()
             
 
         except Ice.Exception as e:
@@ -98,7 +111,71 @@ class SpecificWorker(GenericWorker):
         # joy_data = RoboCompJoystickAdapter.TData()
         # self.joystickadapter_proxy.sendData()
         
+    # =============== Drone Movements ===================
+    # ===================================================================
+
+    # PoseType parameters
+    # x = adv           rx: None
+    # y = width         ry: None
+    # z = height        rz: rotate
+    def moveDummy(self, x_=0, y_=0, z_=0, rz_=0):
+        self.pose = RoboCompCoppeliaUtils.PoseType(x=x_,y=y_,z=z_,rz=rz_)
+        headCamera = RoboCompCoppeliaUtils.TargetTypes.HeadCamera
+        self.coppeliautils_proxy.addOrModifyDummy(headCamera, "Quadricopter_target", self.pose)
+
+    def idle(self):
+        print("[ IDLE ]")
+        if self.x == 0:
+            self.moveDummy(x_=0.002)
+        if self.x > 0:
+            self.state = 2   #state = move x
+
+    def movex(self):
+        print("[ MOVE X ]")
+        if self.x > 260:
+            self.moveDummy(y_=-0.001)
+        if self.x < 260:
+            self.moveDummy(y_=0.001)
+        if self.x >= 250 or self.x <= 260:    
+            self.state = 3  #state = 
+
+    def movey(self):
+        print("[ MOVE Y ]")
+        if self.y > 225:
+            self.moveDummy(z_=0.001)
+        if self.y < 225:
+            self.moveDummy(z_=-0.001)
+        if self.y >= 209 or self.y <= 226:
+            self.state = 4  #state = 
+ 
+    def advance(self):
+        print("[ ADVANCE ]")
+        depth = self.depth_array[225][225]
+        print("depht_array:  ", self.depth_array[225][225])
+        self.moveDummy(x_=0.005)
+        if depth <= 0.19 and self.x >= 230 and self.y >= 226:
+            self.moveDummy(x_=-0.002)
+            plt.pause(.1)
+            self.state = 5  #state = drop
+        else:
+            self.state = 2  #state = move x
+
+    def drop(self):
+        print("[ DROP ]")
+        
+        
+        self.moveDummy(rz_=-0.005)
+
+        if self.depth_array[200][200] >= 10:
+            print("depht_array:  ", self.depth_array[200][200])
+            self.state = 6
     
+    def stop(self):
+        print("[ STOP ]")
+
+    def error(self):
+        print("Error en el switch")
+
         
     # ===================================================================
     def draw_image(self, color_):
@@ -147,6 +224,8 @@ class SpecificWorker(GenericWorker):
 
     def startup_check(self):
         QTimer.singleShot(200, QApplication.instance().quit)
+
+
 
 
     # =============== Slots methods for State Machine ===================

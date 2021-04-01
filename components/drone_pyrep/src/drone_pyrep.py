@@ -150,6 +150,11 @@ if __name__ == '__main__':
     adapter.add(camerargbdsimpleI.CameraRGBDSimpleI(worker), ic.stringToIdentity('camerargbdsimple'))
     adapter.activate()
 
+    adapter = ic.createObjectAdapter('CoppeliaUtils')
+    adapter.add(coppeliautilsI.CoppeliaUtilsI(worker), ic.stringToIdentity('coppeliautils'))
+    adapter.activate()
+
+
     signal.signal(signal.SIGINT, sigint_handler)
     #app.exec_()
     worker.compute()

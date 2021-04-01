@@ -127,7 +127,7 @@ class SpecificWorker(GenericWorker):
                 if x.name == "side":
                     rot = x.value/15 if np.abs(x.value) > 0.001 else 0
 
-            print("Joystick ", adv, side, height, rot)
+            #print("Joystick ", adv, side, height, rot)
             self.move_quad_target([adv, side, height, rot])
             self.joystick_newdata = None
             self.last_received_data_time = time.time()
@@ -171,23 +171,11 @@ class SpecificWorker(GenericWorker):
     # CoppeliaUtils
     # ===================================================================
     def CoppeliaUtils_addOrModifyDummy(self, type, name, pose):
-        if not Dummy.exists(name):
-            dummy = Dummy.create(0.1)
-            print("DUMMY exists ")
-            # one color for each type of dummy
-            if type == RoboCompCoppeliaUtils.TargetTypes.Info:
-                pass
-            if type == RoboCompCoppeliaUtils.TargetTypes.Hand:
-                pass
-            if type == RoboCompCoppeliaUtils.TargetTypes.HeadCamera:
-                pass
-            dummy.set_name(name)
+        if not Shape.exists(name):
+            shape = Shape.create(0.1)
+            shape.set_name(name)
+            print("DUMMY created ")
         else:
-            dummy = Dummy(name)
-            parent_frame_object = None
-            if type == RoboCompCoppeliaUtils.TargetTypes.HeadCamera:
-                parent_frame_object = Dummy("frontCamera")
-            print("Coppelia ", name, pose.x/1000, pose.y/1000, pose.z/1000)
-            dummy.set_position([pose.x / 1000., pose.y / 1000., pose.z / 1000.], parent_frame_object)
-            dummy.set_orientation([pose.rx, pose.ry, pose.rz], parent_frame_object)
+            print("CoppeliaProxy: ", name, pose.x, pose.y, pose.z, pose.rz)
+            self.move_quad_target([pose.x, pose.y, pose.z, pose.rz])
 
