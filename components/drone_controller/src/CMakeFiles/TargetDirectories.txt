@@ -1,3 +1,0 @@
-/home/borja/drone_controller/src/CMakeFiles/rebuild_cache.dir
-/home/borja/drone_controller/src/CMakeFiles/edit_cache.dir
-/home/borja/drone_controller/src/CMakeFiles/ICES__home_borja_drone_controller_src.dir
