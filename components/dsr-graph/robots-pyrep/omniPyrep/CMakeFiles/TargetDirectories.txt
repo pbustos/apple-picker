@@ -1,5 +1,0 @@
-/home/borja/apple-picker/components/omniPyrep/CMakeFiles/rebuild_cache.dir
-/home/borja/apple-picker/components/omniPyrep/CMakeFiles/edit_cache.dir
-/home/borja/apple-picker/components/omniPyrep/src/CMakeFiles/rebuild_cache.dir
-/home/borja/apple-picker/components/omniPyrep/src/CMakeFiles/edit_cache.dir
-/home/borja/apple-picker/components/omniPyrep/src/CMakeFiles/ICES__home_borja_apple-picker_components_omniPyrep_src.dir

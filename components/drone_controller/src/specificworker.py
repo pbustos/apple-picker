@@ -84,9 +84,7 @@ class SpecificWorker(GenericWorker):
         if len(self.depth.depth) <= 1048576:
             self.depth_array = np.frombuffer(self.depth.depth,dtype=np.float32).reshape(self.depth.height, 
                 self.depth.width)
-            
         try: 
-            
             if self.state == 1:
                 self.idle()
             elif self.state == 2:
@@ -101,7 +99,6 @@ class SpecificWorker(GenericWorker):
                 self.stop()                
             else:
                 self.error()
-            
 
         except Ice.Exception as e:
             print(e)
@@ -112,7 +109,7 @@ class SpecificWorker(GenericWorker):
         # self.joystickadapter_proxy.sendData()
         
     # =============== Drone Movements ===================
-    # ===================================================================
+    # ===================================================
 
     # PoseType parameters
     # x = adv           rx: None
@@ -137,7 +134,7 @@ class SpecificWorker(GenericWorker):
         if self.x < 260:
             self.moveDummy(y_=0.001)
         if self.x >= 250 or self.x <= 260:    
-            self.state = 3  #state = 
+            self.state = 3  #state = move y
 
     def movey(self):
         print("[ MOVE Y ]")
@@ -146,7 +143,7 @@ class SpecificWorker(GenericWorker):
         if self.y < 225:
             self.moveDummy(z_=-0.001)
         if self.y >= 209 or self.y <= 226:
-            self.state = 4  #state = 
+            self.state = 4  #state = advance
  
     def advance(self):
         print("[ ADVANCE ]")
@@ -162,13 +159,11 @@ class SpecificWorker(GenericWorker):
 
     def drop(self):
         print("[ DROP ]")
-        
-        
         self.moveDummy(rz_=-0.005)
 
         if self.depth_array[200][200] >= 10:
             print("depht_array:  ", self.depth_array[200][200])
-            self.state = 6
+            self.state = 6 
     
     def stop(self):
         print("[ STOP ]")
