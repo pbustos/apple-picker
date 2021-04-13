@@ -142,9 +142,9 @@ class SpecificWorker(GenericWorker):
     def movey(self):
         
         if self.y > 235:
-            self.moveDummy(z_=0.003)
+            self.moveDummy(z_=0.001)
         if self.y < 235:
-            self.moveDummy(z_=-0.003)
+            self.moveDummy(z_=-0.001)
         if self.y >= 220 or self.y <= 235:
             print("[MOVE Y] = ", self.y)
             self.state = 4  #state = advance
@@ -156,11 +156,11 @@ class SpecificWorker(GenericWorker):
             self.moveDummy(x_=0.005)
         else:
             self.moveDummy(x_=0.002)
-        if depth <= 0.184 and self.x >= 230 and self.y >= 226:
+        if (depth > 0.18 and depth < 0.19):
+            print("DEPTH < ", depth)
             self.state = 7  #state = reverse
-        else:
+        else:                
             self.state = 2  #state = move x
-    
     
             
     # State 5: DROP
