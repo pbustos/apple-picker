@@ -96,7 +96,9 @@ class SpecificWorker(GenericWorker):
             elif self.state == 5:
                 self.drop()
             elif self.state == 6:
-                self.stop()                
+                self.stop()
+            elif self.state == 7:
+                self.reverse()                
             else:
                 self.error()
 
@@ -128,45 +130,58 @@ class SpecificWorker(GenericWorker):
             self.state = 2   #state = move x
 
     def movex(self):
-        print("[ MOVE X ]")
+        
         if self.x > 260:
             self.moveDummy(y_=-0.001)
         if self.x < 260:
             self.moveDummy(y_=0.001)
-        if self.x >= 250 or self.x <= 260:    
+        if self.x >= 250 or self.x <= 260:  
+            print("[MOVE X] = ", self.x)  
             self.state = 3  #state = move y
 
     def movey(self):
-        print("[ MOVE Y ]")
-        if self.y > 225:
-            self.moveDummy(z_=0.001)
-        if self.y < 225:
-            self.moveDummy(z_=-0.001)
-        if self.y >= 209 or self.y <= 226:
+        
+        if self.y > 235:
+            self.moveDummy(z_=0.003)
+        if self.y < 235:
+            self.moveDummy(z_=-0.003)
+        if self.y >= 220 or self.y <= 235:
+            print("[MOVE Y] = ", self.y)
             self.state = 4  #state = advance
- 
+    #State 4: ADVANCE
     def advance(self):
-        print("[ ADVANCE ]")
+        print("[ADVANCE] depth = ", self.depth_array[225][225])
         depth = self.depth_array[225][225]
-        print("depht_array:  ", self.depth_array[225][225])
-        self.moveDummy(x_=0.005)
-        if depth <= 0.19 and self.x >= 230 and self.y >= 226:
-            self.moveDummy(x_=-0.002)
-            plt.pause(.1)
-            self.state = 5  #state = drop
+        if depth > 30: 
+            self.moveDummy(x_=0.005)
+        else:
+            self.moveDummy(x_=0.002)
+        if depth <= 0.184 and self.x >= 230 and self.y >= 226:
+            self.state = 7  #state = reverse
         else:
             self.state = 2  #state = move x
-
+    
+    
+            
+    # State 5: DROP
     def drop(self):
-        print("[ DROP ]")
+        print("[ DROP ] depth: ", self.depth_array[200][200])
+
         self.moveDummy(rz_=-0.005)
 
         if self.depth_array[200][200] >= 10:
-            print("depht_array:  ", self.depth_array[200][200])
             self.state = 6 
     
+    # State 6: STOP
     def stop(self):
         print("[ STOP ]")
+
+    # State 7: REVERSE
+    def reverse(self):
+        print("[ REVERSE ] depth: ", self.depth_array[200][200])
+        self.moveDummy(x_=-0.002)
+        if self.depth_array[200][200] >= 0.35:
+            self.state = 5
 
     def error(self):
         print("Error en el switch")
