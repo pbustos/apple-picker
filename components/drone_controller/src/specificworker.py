@@ -39,10 +39,7 @@ class SpecificWorker(GenericWorker):
         self.x = 0
         self.y = 0
         self.pose = {}
-        self.switch = {
-            1:self.idle(),
-            2:self.movex()
-        }
+
         # Image
         self.image = []
         self.depth = []
@@ -68,39 +65,42 @@ class SpecificWorker(GenericWorker):
         #	print("Error reading config params")
         return True
 
+    def draw_image(self, color_):
+        color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
+        #Marker is on X: 256 Y:256
+        cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
+        plt.imshow(color)
+
+        # plt.figure(1)
+        # plt.clf()
+        # plt.imshow(color)
+        # plt.title('Front Camera ')
+        # plt.pause(.1)
+
+    def draw_camera(self, color_, title):
+        # color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
+        plt.figure(1)
+        plt.clf()
+        plt.imshow(color_)
+        plt.pause(.001)
 
     @QtCore.Slot()
     def compute(self):
         all = self.camerargbdsimple_proxy.getAll(self.camera_name)
         self.image = all.image
         self.depth = all.depth
-        self.x, self.y = self.circleDetect(self.image)
-        # print("Value X: " ,self.x)
-        # print("Value Y: " ,self.y)
-    
+        self.draw_image(self.image)
 
         # Depth processing
-        # Max value: 10.0       Min value from apple: 0.19
+        # Max value: 10.0       Min value from apple: between 0.18 and 0.19
         if len(self.depth.depth) <= 1048576:
             self.depth_array = np.frombuffer(self.depth.depth,dtype=np.float32).reshape(self.depth.height, 
                 self.depth.width)
+
+        self.x, self.y = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red
+
         try: 
-            if self.state == 1:
-                self.idle()
-            elif self.state == 2:
-                self.movex()
-            elif self.state == 3:
-                self.movey()
-            elif self.state == 4:
-                self.advance()
-            elif self.state == 5:
-                self.drop()
-            elif self.state == 6:
-                self.stop()
-            elif self.state == 7:
-                self.reverse()                
-            else:
-                self.error()
+            self.appleSwitch()
 
         except Ice.Exception as e:
             print(e)
@@ -109,7 +109,26 @@ class SpecificWorker(GenericWorker):
         # code to send data to drone_pyrep. See ~/robocomp/interfaces/IDSLs/JoystickAdapter.idsl
         # joy_data = RoboCompJoystickAdapter.TData()
         # self.joystickadapter_proxy.sendData()
+    
+    def appleSwitch(self):
         
+        if self.state == 1:
+            self.idle()
+        elif self.state == 2:
+            self.movex()
+        elif self.state == 3:
+            self.movey()
+        elif self.state == 4:
+            self.advance()
+        elif self.state == 5:
+            self.drop()
+        elif self.state == 6:
+            self.stop()
+        elif self.state == 7:
+            self.reverse()                
+        else:
+            self.error()
+
     # =============== Drone Movements ===================
     # ===================================================
 
@@ -130,7 +149,6 @@ class SpecificWorker(GenericWorker):
             self.state = 2   #state = move x
 
     def movex(self):
-        
         if self.x > 260:
             self.moveDummy(y_=-0.001)
         if self.x < 260:
@@ -139,8 +157,8 @@ class SpecificWorker(GenericWorker):
             print("[MOVE X] = ", self.x)  
             self.state = 3  #state = move y
 
+
     def movey(self):
-        
         if self.y > 235:
             self.moveDummy(z_=0.001)
         if self.y < 235:
@@ -152,11 +170,11 @@ class SpecificWorker(GenericWorker):
     def advance(self):
         print("[ADVANCE] depth = ", self.depth_array[225][225])
         depth = self.depth_array[225][225]
-        if depth > 30: 
-            self.moveDummy(x_=0.005)
+        if depth > 0.30: 
+            self.moveDummy(x_=0.01)
         else:
-            self.moveDummy(x_=0.002)
-        if (depth > 0.18 and depth < 0.19):
+            self.moveDummy(x_=0.003)
+        if (depth > 0.17 and depth < 0.19):
             print("DEPTH < ", depth)
             self.state = 7  #state = reverse
         else:                
@@ -186,28 +204,21 @@ class SpecificWorker(GenericWorker):
     def error(self):
         print("Error en el switch")
 
-        
-    # ===================================================================
-    def draw_image(self, color_):
-        color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
-        plt.figure(1)
-        plt.clf()
-        plt.imshow(color)
-        plt.title('Front Camera ')
-        plt.pause(.1)
 
-    def circleDetect(self, color_):
+    # =============== Object detection ===================
+    # ====================================================
+    def colorDetect(self, color_, low_h, low_s, low_v, up_h, up_s, up_v):
+        color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         x = 0
         y = 0
-        color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         #Marker is on X: 256 Y:256
-        cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
-        plt.imshow(color)
+        # cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
+        # plt.imshow(color)
         color = cv.cvtColor(color, cv.COLOR_RGB2BGR)
         
         hsv = cv.cvtColor(color, cv.COLOR_BGR2HSV)
-        lower_red_range = np.array([0, 50, 120])
-        upper_red_range = np.array([10, 255, 255])
+        lower_red_range = np.array([low_h, low_s, low_v])
+        upper_red_range = np.array([up_h, up_s, up_v])
         mask = cv.inRange(hsv, lower_red_range, upper_red_range)
         # Find contours
         cnts = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -215,7 +226,7 @@ class SpecificWorker(GenericWorker):
         # Iterate through contours and filter by the number of vertices 
         for c in cnts:
             area = cv.contourArea(c)
-            if area > 1000: 
+            if area > 700: 
                 cv.drawContours(color,[c],-1,(0,255,0), 2)
                 M = cv.moments(c)
                 x = int(M["m10"]/ M["m00"])
@@ -225,11 +236,8 @@ class SpecificWorker(GenericWorker):
                 # cv.putText(color, "rojo", (x-20, y-20), cv.FONT_HERSHEY_SIMPLEX,2, (255,255,255), 2)
 
         color = cv.cvtColor(color, cv.COLOR_BGR2RGB)
-        plt.figure(1)
-        plt.clf()
-        plt.imshow(color)
-        plt.title('OpenCV Camera ')
-        plt.pause(.001)
+        
+        self.draw_camera(color, 'Drone Camera')
         return (x, y)
 
     def startup_check(self):

@@ -77,7 +77,7 @@ class SpecificWorker(GenericWorker):
             self.pr.step()
             self.read_camera(self.cameras[self.front_camera_name])
             self.read_joystick()
-
+            
             elapsed = time.time()-start
             if elapsed < 0.05:
                 time.sleep(0.05-elapsed)
@@ -140,6 +140,7 @@ class SpecificWorker(GenericWorker):
         current_ori = target.get_orientation(self.drone)
         target.set_position([current_pos[0]-adv, current_pos[1]-side, current_pos[2]-height], self.drone)
         target.set_orientation([current_ori[0] - adv, current_ori[1] - side, current_ori[2] - rot], self.drone)
+        
 
     ##################################################################################
     # SUBSCRIPTION to sendData method from JoystickAdapter interface
@@ -178,4 +179,5 @@ class SpecificWorker(GenericWorker):
         else:
             print("CoppeliaProxy: ", name, pose.x, pose.y, pose.z, pose.rz)
             self.move_quad_target([pose.x, pose.y, pose.z, pose.rz])
+
 
