@@ -173,11 +173,15 @@ class SpecificWorker(GenericWorker):
     # ===================================================================
     def CoppeliaUtils_addOrModifyDummy(self, type, name, pose):
         if not Shape.exists(name):
-            shape = Shape.create(0.1)
-            shape.set_name(name)
-            print("DUMMY created ")
+            print("DUMMY: "+ name+" doesn't exist")
         else:
-            print("CoppeliaProxy: ", name, pose.x, pose.y, pose.z, pose.rz)
-            self.move_quad_target([pose.x, pose.y, pose.z, pose.rz])
+            if type == RoboCompCoppeliaUtils.TargetTypes.HeadCamera:
+                self.move_quad_target([pose.x, pose.y, pose.z, pose.rz])
+
+            if type == RoboCompCoppeliaUtils.TargetTypes.Hand:
+                orientation = [1,1,1]
+                target = Shape(name)
+                target.set_orientation(orientation,None)
+                print("[+] APPLE RELEASE")
 
 

@@ -174,7 +174,7 @@ class SpecificWorker(GenericWorker):
             self.moveDummy(x_=0.01)
         else:
             self.moveDummy(x_=0.003)
-        if (depth > 0.17 and depth < 0.19):
+        if (depth > 0.17 and depth < 0.185):
             print("DEPTH < ", depth)
             self.state = 7  #state = reverse
         else:                
@@ -188,6 +188,9 @@ class SpecificWorker(GenericWorker):
         self.moveDummy(rz_=-0.005)
 
         if self.depth_array[200][200] >= 10:
+            hand = RoboCompCoppeliaUtils.TargetTypes.Hand
+            self.coppeliautils_proxy.addOrModifyDummy(hand, "suctionPad_Dummy", None)
+
             self.state = 6 
     
     # State 6: STOP
