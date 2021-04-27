@@ -1,9 +1,9 @@
 #RCNODE
-qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.addSession
-sess=`qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.activeSessionId`
-qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.runCommand 'rcnode'
-qdbus org.kde.yakuake /yakuake/tabs org.kde.yakuake.setTabTitle $sess 'rcnode'
-sleep 1
+ qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.addSession
+ sess=`qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.activeSessionId`
+ qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.runCommand 'rcnode'
+ qdbus org.kde.yakuake /yakuake/tabs org.kde.yakuake.setTabTitle $sess 'rcnode'
+ sleep 1
 
 # DRONE PYREP
 qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.addSession

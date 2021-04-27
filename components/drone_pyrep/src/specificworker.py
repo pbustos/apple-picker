@@ -182,6 +182,7 @@ class SpecificWorker(GenericWorker):
                 orientation = [1,1,1]
                 target = Shape(name)
                 target.set_orientation(orientation,None)
+                actual_orientation = target.get_orientation() #TODO
                 print("[+] APPLE RELEASE")
 
 

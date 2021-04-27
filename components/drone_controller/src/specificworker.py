@@ -22,6 +22,7 @@
 from PySide2.QtCore import QTimer
 from PySide2.QtWidgets import QApplication
 from genericworker import *
+from dt_apriltags import Detector
 import cv2 as cv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -39,6 +40,9 @@ class SpecificWorker(GenericWorker):
         self.x = 0
         self.y = 0
         self.pose = {}
+
+        #AprilTags
+        self.center = 0
 
         # Image
         self.image = []
@@ -71,18 +75,13 @@ class SpecificWorker(GenericWorker):
         cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
         plt.imshow(color)
 
-        # plt.figure(1)
-        # plt.clf()
-        # plt.imshow(color)
-        # plt.title('Front Camera ')
-        # plt.pause(.1)
 
     def draw_camera(self, color_, title):
-        # color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         plt.figure(1)
         plt.clf()
         plt.imshow(color_)
-        plt.pause(.001)
+        plt.title('Front Camera ')
+        plt.pause(.00001)
 
     @QtCore.Slot()
     def compute(self):
@@ -98,6 +97,9 @@ class SpecificWorker(GenericWorker):
                 self.depth.width)
 
         self.x, self.y = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red
+        ##############      DETECCION APRILTAGS: TODAVIA INESTABLE      ##############
+        #TODO 
+        # self.ar_detection(self.image) 
 
         try: 
             self.appleSwitch()
@@ -105,10 +107,6 @@ class SpecificWorker(GenericWorker):
         except Ice.Exception as e:
             print(e)
 
-        # RoboCompCoppeliaUtils.CoppeliaUtils.addOrModifyDummy(self, self.headCamera, self.camera_name, self.pt) 
-        # code to send data to drone_pyrep. See ~/robocomp/interfaces/IDSLs/JoystickAdapter.idsl
-        # joy_data = RoboCompJoystickAdapter.TData()
-        # self.joystickadapter_proxy.sendData()
     
     def appleSwitch(self):
         
@@ -166,14 +164,15 @@ class SpecificWorker(GenericWorker):
         if self.y >= 220 or self.y <= 235:
             print("[MOVE Y] = ", self.y)
             self.state = 4  #state = advance
-    #State 4: ADVANCE
+
+    #State 4: ADVANCE until the suctionPad catches the apple
     def advance(self):
         print("[ADVANCE] depth = ", self.depth_array[225][225])
         depth = self.depth_array[225][225]
         if depth > 0.30: 
             self.moveDummy(x_=0.01)
         else:
-            self.moveDummy(x_=0.003)
+            self.moveDummy(x_=0.005)
         if (depth > 0.17 and depth < 0.185):
             print("DEPTH < ", depth)
             self.state = 7  #state = reverse
@@ -188,9 +187,7 @@ class SpecificWorker(GenericWorker):
         self.moveDummy(rz_=-0.005)
 
         if self.depth_array[200][200] >= 10:
-            hand = RoboCompCoppeliaUtils.TargetTypes.Hand
-            self.coppeliautils_proxy.addOrModifyDummy(hand, "suctionPad_Dummy", None)
-
+            self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", None)
             self.state = 6 
     
     # State 6: STOP
@@ -214,9 +211,6 @@ class SpecificWorker(GenericWorker):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         x = 0
         y = 0
-        #Marker is on X: 256 Y:256
-        # cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
-        # plt.imshow(color)
         color = cv.cvtColor(color, cv.COLOR_RGB2BGR)
         
         hsv = cv.cvtColor(color, cv.COLOR_BGR2HSV)
@@ -239,9 +233,39 @@ class SpecificWorker(GenericWorker):
                 # cv.putText(color, "rojo", (x-20, y-20), cv.FONT_HERSHEY_SIMPLEX,2, (255,255,255), 2)
 
         color = cv.cvtColor(color, cv.COLOR_BGR2RGB)
-        
+
         self.draw_camera(color, 'Drone Camera')
         return (x, y)
+
+    def ar_detection(self, color_):
+        color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
+        gray = cv.cvtColor(color, cv.COLOR_RGB2GRAY)
+        k = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+        cameraMatrix = np.array(k).reshape((3,3))
+        camera_params = ( cameraMatrix[0,0], cameraMatrix[1,1], cameraMatrix[0,2], cameraMatrix[1,2] )
+
+        at_detector = Detector(searchpath=['apriltags'],
+                       families='tag36h11',
+                       nthreads=1,
+                       quad_decimate=1.0,
+                       quad_sigma=0.0,
+                       refine_edges=1,
+                       decode_sharpening=0.25,
+                       debug=0)
+
+        tag_size = 0.065
+        tags = at_detector.detect(gray, False, camera_params, tag_size)
+        print("[INFO] {} total AprilTags detected".format(len(tags)))
+        
+        for tag in tags:
+            for idx in range(len(tag.corners)):
+                cv.line(color, tuple(tag.corners[idx-1, :].astype(int)),
+                 tuple(tag.corners[idx, :].astype(int)), (0, 255, 0),thickness=2)
+                cv.circle(color, tuple(tag.center.astype(int)), 2, (0,255,0), 2)
+                self.center = tag.center    
+        
+        self.draw_camera(color, 'Drone Camera')
 
     def startup_check(self):
         QTimer.singleShot(200, QApplication.instance().quit)
