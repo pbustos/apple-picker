@@ -43,6 +43,7 @@ class SpecificWorker(GenericWorker):
 
         #AprilTags
         self.center = 0
+        self.n_tags = 0
 
         # Image
         self.image = []
@@ -96,10 +97,11 @@ class SpecificWorker(GenericWorker):
             self.depth_array = np.frombuffer(self.depth.depth,dtype=np.float32).reshape(self.depth.height, 
                 self.depth.width)
 
-        self.x, self.y = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red
-        ##############      DETECCION APRILTAGS: TODAVIA INESTABLE      ##############
-        #TODO 
-        # self.ar_detection(self.image) 
+        if(self.state != 5 and self.state != 7):
+            self.x, self.y = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red
+        elif(self.state == 5 or self.state == 7):
+        ##############TODO      DETECCION APRILTAGS: TODAVIA INESTABLE      ##############
+            self.ar_detection(self.image)
 
         try: 
             self.appleSwitch()
@@ -255,16 +257,20 @@ class SpecificWorker(GenericWorker):
                        debug=0)
 
         tag_size = 0.065
-        tags = at_detector.detect(gray, False, camera_params, tag_size)
-        print("[INFO] {} total AprilTags detected".format(len(tags)))
-        
-        for tag in tags:
-            for idx in range(len(tag.corners)):
-                cv.line(color, tuple(tag.corners[idx-1, :].astype(int)),
-                 tuple(tag.corners[idx, :].astype(int)), (0, 255, 0),thickness=2)
-                cv.circle(color, tuple(tag.center.astype(int)), 2, (0,255,0), 2)
-                self.center = tag.center    
-        
+        if(self.n_tags == 0):
+            tags = at_detector.detect(gray, False, camera_params, tag_size)
+            if(len(tags) == 1):
+                print("[INFO] {} total AprilTags detected".format(len(tags)))
+                self.n_tags = 1
+            
+        if(self.n_tags >= 1):
+            for tag in tags:
+                for idx in range(len(tag.corners)):
+                    cv.line(color, tuple(tag.corners[idx-1, :].astype(int)),
+                    tuple(tag.corners[idx, :].astype(int)), (0, 255, 0),thickness=2)
+                    cv.circle(color, tuple(tag.center.astype(int)), 2, (0,255,0), 2)
+                    self.center = tag.center    
+            
         self.draw_camera(color, 'Drone Camera')
 
     def startup_check(self):
