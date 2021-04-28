@@ -138,6 +138,8 @@ class SpecificWorker(GenericWorker):
         adv, side, height, rot = vels
         current_pos = target.get_position(self.drone)
         current_ori = target.get_orientation(self.drone)
+        # print("Drone pose:", current_pos)
+        # print("Drone orientation:", current_ori)
         target.set_position([current_pos[0]-adv, current_pos[1]-side, current_pos[2]-height], self.drone)
         target.set_orientation([current_ori[0] - adv, current_ori[1] - side, current_ori[2] - rot], self.drone)
         
@@ -177,12 +179,13 @@ class SpecificWorker(GenericWorker):
         else:
             if type == RoboCompCoppeliaUtils.TargetTypes.HeadCamera:
                 self.move_quad_target([pose.x, pose.y, pose.z, pose.rz])
-
+                
             if type == RoboCompCoppeliaUtils.TargetTypes.Hand:
                 orientation = [1,1,1]
                 target = Shape(name)
                 target.set_orientation(orientation,None)
-                actual_orientation = target.get_orientation() #TODO
+                # actual_orientation = target.get_orientation() #TODO
+                
                 print("[+] APPLE RELEASE")
 
 

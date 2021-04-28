@@ -36,14 +36,24 @@ class SpecificWorker(GenericWorker):
         super(SpecificWorker, self).__init__(proxy_map)
         
         # Drone
-        self.state = 1
+        self.state = 'idle'
         self.x = 0
         self.y = 0
         self.pose = {}
+        self.appleCatched = False
 
         #AprilTags
         self.center = 0
+        self.tags = {}
         self.n_tags = 0
+        self.at_detector = Detector(searchpath=['apriltags'],
+                       families='tag36h11',
+                       nthreads=1,
+                       quad_decimate=1.0,
+                       quad_sigma=0.0,
+                       refine_edges=1,
+                       decode_sharpening=0.25,
+                       debug=0)
 
         # Image
         self.image = []
@@ -51,6 +61,7 @@ class SpecificWorker(GenericWorker):
         self.camera_name = "frontCamera"
         self.data = {}
         self.depth_array = []
+
         #Timer
         self.Period = 100
         if startup_check:
@@ -73,7 +84,8 @@ class SpecificWorker(GenericWorker):
     def draw_image(self, color_):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         #Marker is on X: 256 Y:256
-        cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
+        # cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
+        cv.drawMarker(color, (200, 200),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
         plt.imshow(color)
 
 
@@ -97,10 +109,9 @@ class SpecificWorker(GenericWorker):
             self.depth_array = np.frombuffer(self.depth.depth,dtype=np.float32).reshape(self.depth.height, 
                 self.depth.width)
 
-        if(self.state != 5 and self.state != 7):
+        if(self.appleCatched == False):
             self.x, self.y = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red
-        elif(self.state == 5 or self.state == 7):
-        ##############TODO      DETECCION APRILTAGS: TODAVIA INESTABLE      ##############
+        else:
             self.ar_detection(self.image)
 
         try: 
@@ -112,27 +123,34 @@ class SpecificWorker(GenericWorker):
     
     def appleSwitch(self):
         
-        if self.state == 1:
+        if self.state == 'idle':
             self.idle()
-        elif self.state == 2:
+        elif self.state == 'movex':
             self.movex()
-        elif self.state == 3:
+        elif self.state == 'movey':
             self.movey()
-        elif self.state == 4:
+        elif self.state == 'advance':
             self.advance()
-        elif self.state == 5:
+        elif self.state == 'drop':
             self.drop()
-        elif self.state == 6:
+        elif self.state == 'stop':
             self.stop()
-        elif self.state == 7:
-            self.reverse()                
+        elif self.state == 'reverse':
+            self.reverse()         
+        elif self.state == 'turnleft': 
+            self.turn_left_tag()
+        elif self.state == 'turnright':
+            self.turn_right()
+        elif self.state == 'tag':
+            self.tag()       
+        
         else:
             self.error()
 
     # =============== Drone Movements ===================
     # ===================================================
 
-    # PoseType parameters
+    # PoseType parameters for movements
     # x = adv           rx: None
     # y = width         ry: None
     # z = height        rz: rotate
@@ -141,13 +159,14 @@ class SpecificWorker(GenericWorker):
         headCamera = RoboCompCoppeliaUtils.TargetTypes.HeadCamera
         self.coppeliautils_proxy.addOrModifyDummy(headCamera, "Quadricopter_target", self.pose)
 
+    #State: idle
     def idle(self):
         print("[ IDLE ]")
         if self.x == 0:
             self.moveDummy(x_=0.002)
-        if self.x > 0:
-            self.state = 2   #state = move x
-
+        if self.x > 0:              #apple detected
+            self.state = 'movex'    #state = move x
+    #State: move coordinate x
     def movex(self):
         if self.x > 260:
             self.moveDummy(y_=-0.001)
@@ -155,9 +174,9 @@ class SpecificWorker(GenericWorker):
             self.moveDummy(y_=0.001)
         if self.x >= 250 or self.x <= 260:  
             print("[MOVE X] = ", self.x)  
-            self.state = 3  #state = move y
+            self.state = 'movey'    #state = move y
 
-
+    #State: move coordinate y
     def movey(self):
         if self.y > 235:
             self.moveDummy(z_=0.001)
@@ -165,43 +184,68 @@ class SpecificWorker(GenericWorker):
             self.moveDummy(z_=-0.001)
         if self.y >= 220 or self.y <= 235:
             print("[MOVE Y] = ", self.y)
-            self.state = 4  #state = advance
+            self.state = 'advance'  #state = advance
 
-    #State 4: ADVANCE until the suctionPad catches the apple
+    #State: advance until the suctionPad catches the apple
     def advance(self):
-        print("[ADVANCE] depth = ", self.depth_array[225][225])
-        depth = self.depth_array[225][225]
+        print("[ADVANCE] depth = ", self.depth_array[200][200])
+        depth = self.depth_array[200][200]
         if depth > 0.30: 
             self.moveDummy(x_=0.01)
         else:
             self.moveDummy(x_=0.005)
         if (depth > 0.17 and depth < 0.185):
             print("DEPTH < ", depth)
-            self.state = 7  #state = reverse
+            self.state = 'reverse'  #state = reverse
         else:                
-            self.state = 2  #state = move x
+            self.state = 'movex'    #state = move x
     
             
-    # State 5: DROP
+    # State: drop
     def drop(self):
         print("[ DROP ] depth: ", self.depth_array[200][200])
-
-        self.moveDummy(rz_=-0.005)
-
-        if self.depth_array[200][200] >= 10:
-            self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", None)
-            self.state = 6 
+        self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", None)
+        self.state = 'turnright' 
+        self.appleCatched = False
+        
     
-    # State 6: STOP
+    # State: stop
     def stop(self):
         print("[ STOP ]")
 
-    # State 7: REVERSE
+    # State: REVERSE
     def reverse(self):
         print("[ REVERSE ] depth: ", self.depth_array[200][200])
         self.moveDummy(x_=-0.002)
         if self.depth_array[200][200] >= 0.35:
-            self.state = 5
+            self.state = 'turnleft'
+        self.appleCatched = True
+
+     # State: turnleft
+    def turn_left_tag(self):
+        print("[ TURN LEFT ] ", self.depth_array[200][200])
+        if(self.n_tags == 0):        
+            self.moveDummy(rz_=-0.007)
+        else:
+            print("             + TAG SPOTTED")
+            self.state = 'tag'
+
+    # State: turnright
+    def turn_right(self):
+        print("[ TURN RIGHT ] depth", self.depth_array[200][200])
+        if(self.depth_array[200][200] > 0.5):
+            self.moveDummy(rz_=0.005)
+        else:
+            self.state = 'stop'
+
+    # State: tag
+    def tag(self):
+        print("[ TAG ] ")
+        # print("Centro X del tag: ",self.center[0])
+        # print("Centro Y del tag: ",self.center[1])
+        self.state = 'drop'
+
+
 
     def error(self):
         print("Error en el switch")
@@ -247,29 +291,23 @@ class SpecificWorker(GenericWorker):
         cameraMatrix = np.array(k).reshape((3,3))
         camera_params = ( cameraMatrix[0,0], cameraMatrix[1,1], cameraMatrix[0,2], cameraMatrix[1,2] )
 
-        at_detector = Detector(searchpath=['apriltags'],
-                       families='tag36h11',
-                       nthreads=1,
-                       quad_decimate=1.0,
-                       quad_sigma=0.0,
-                       refine_edges=1,
-                       decode_sharpening=0.25,
-                       debug=0)
-
         tag_size = 0.065
-        if(self.n_tags == 0):
-            tags = at_detector.detect(gray, False, camera_params, tag_size)
-            if(len(tags) == 1):
-                print("[INFO] {} total AprilTags detected".format(len(tags)))
-                self.n_tags = 1
+        # if(self.n_tags == 0):
+        self.tags = self.at_detector.detect(gray, False, camera_params, tag_size)
+        if(len(self.tags) == 1):
+            print("[ INFO ] {} total AprilTags detected".format(len(self.tags)))
+            self.n_tags = 1
             
-        if(self.n_tags >= 1):
-            for tag in tags:
+        if(self.n_tags == 1):
+            for tag in self.tags:
                 for idx in range(len(tag.corners)):
                     cv.line(color, tuple(tag.corners[idx-1, :].astype(int)),
                     tuple(tag.corners[idx, :].astype(int)), (0, 255, 0),thickness=2)
                     cv.circle(color, tuple(tag.center.astype(int)), 2, (0,255,0), 2)
-                    self.center = tag.center    
+                    self.center = tag.center.astype(int)
+                    
+                    print("Centro X del tag: ",self.center[0])
+                    print("Centro Y del tag: ",self.center[1])  
             
         self.draw_camera(color, 'Drone Camera')
 
