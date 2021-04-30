@@ -40,7 +40,10 @@ class SpecificWorker(GenericWorker):
         self.x = 0
         self.y = 0
         self.pose = {}
+        self.pose_home = {0.0022, 0.0000026, 0.00073, 0}
         self.appleCatched = False
+        self.treeCatched = False
+
 
         #AprilTags
         self.center = 0
@@ -61,6 +64,7 @@ class SpecificWorker(GenericWorker):
         self.camera_name = "frontCamera"
         self.data = {}
         self.depth_array = []
+        self.color = 0
 
         #Timer
         self.Period = 100
@@ -109,8 +113,10 @@ class SpecificWorker(GenericWorker):
             self.depth_array = np.frombuffer(self.depth.depth,dtype=np.float32).reshape(self.depth.height, 
                 self.depth.width)
 
-        if(self.appleCatched == False):
-            self.x, self.y = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red
+        if self.treeCatched == False:
+            self.x, self.y, self.color = self.colorDetect(self.image, 36, 0, 0, 86, 255, 255) #green)
+        elif self.appleCatched == False:
+            self.x, self.y, self.color = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red)
         else:
             self.ar_detection(self.image)
 
@@ -138,11 +144,13 @@ class SpecificWorker(GenericWorker):
         elif self.state == 'reverse':
             self.reverse()         
         elif self.state == 'turnleft': 
-            self.turn_left_tag()
+            self.turn_left()
         elif self.state == 'turnright':
             self.turn_right()
         elif self.state == 'tag':
-            self.tag()       
+            self.tag()      
+        elif self.state == 'tree':
+            self.tree() 
         
         else:
             self.error()
@@ -161,11 +169,22 @@ class SpecificWorker(GenericWorker):
 
     #State: idle
     def idle(self):
-        print("[ IDLE ]")
+        print("[ IDLE ] depth = ", self.depth_array[200][200])
+
+        if self.depth_array[200][200] < 1:
+            self.moveDummy(x_=-0.002)
+        elif self.depth_array[200][200] > 9:
+            self.moveDummy(x_= 0.002)
+
         if self.x == 0:
-            self.moveDummy(x_=0.002)
-        if self.x > 0:              #apple detected
-            self.state = 'movex'    #state = move x
+            print("Looking for tree")
+            self.state = 'tree'
+        if self.x > 0 and self.color == 86:     #tree detected
+            print("Tree detected")
+            self.treeCatched = True
+        if self.x > 0 and self.color == 10:     #apple detected
+            print("Apple detected")
+            self.state = 'movex'                #state = move x
     #State: move coordinate x
     def movex(self):
         if self.x > 260:
@@ -200,14 +219,13 @@ class SpecificWorker(GenericWorker):
         else:                
             self.state = 'movex'    #state = move x
     
-            
     # State: drop
     def drop(self):
         print("[ DROP ] depth: ", self.depth_array[200][200])
         self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", None)
         self.state = 'turnright' 
         self.appleCatched = False
-        
+        self.treeCatched = False
     
     # State: stop
     def stop(self):
@@ -222,10 +240,11 @@ class SpecificWorker(GenericWorker):
         self.appleCatched = True
 
      # State: turnleft
-    def turn_left_tag(self):
+    def turn_left(self):
         print("[ TURN LEFT ] ", self.depth_array[200][200])
         if(self.n_tags == 0):        
             self.moveDummy(rz_=-0.007)
+            self.n_tags = 0
         else:
             print("             + TAG SPOTTED")
             self.state = 'tag'
@@ -236,7 +255,7 @@ class SpecificWorker(GenericWorker):
         if(self.depth_array[200][200] > 0.5):
             self.moveDummy(rz_=0.005)
         else:
-            self.state = 'stop'
+            self.state = 'idle'
 
     # State: tag
     def tag(self):
@@ -245,6 +264,13 @@ class SpecificWorker(GenericWorker):
         # print("Centro Y del tag: ",self.center[1])
         self.state = 'drop'
 
+    # State: home POSE: 0	-2.0e-01	+6.50e-01
+    #             ORI: 0	0	0
+    def tree(self):
+        print("[ TREE ] ")
+        # self.moveDummy(x_=0.003)
+        self.treeCatched = False
+        self.state = 'idle'
 
 
     def error(self):
@@ -253,7 +279,7 @@ class SpecificWorker(GenericWorker):
 
     # =============== Object detection ===================
     # ====================================================
-    def colorDetect(self, color_, low_h, low_s, low_v, up_h, up_s, up_v):
+    def colorDetect(self, color_, low_h, low_s, low_v, high_h, high_s, high_v):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         x = 0
         y = 0
@@ -261,7 +287,7 @@ class SpecificWorker(GenericWorker):
         
         hsv = cv.cvtColor(color, cv.COLOR_BGR2HSV)
         lower_red_range = np.array([low_h, low_s, low_v])
-        upper_red_range = np.array([up_h, up_s, up_v])
+        upper_red_range = np.array([high_h, high_s, high_v])
         mask = cv.inRange(hsv, lower_red_range, upper_red_range)
         # Find contours
         cnts = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -281,7 +307,7 @@ class SpecificWorker(GenericWorker):
         color = cv.cvtColor(color, cv.COLOR_BGR2RGB)
 
         self.draw_camera(color, 'Drone Camera')
-        return (x, y)
+        return (x, y, high_h)
 
     def ar_detection(self, color_):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
