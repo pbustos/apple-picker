@@ -40,11 +40,10 @@ class SpecificWorker(GenericWorker):
         self.x = 0
         self.y = 0
         self.pose = {}
-        self.pose_home = {0.0022, 0.0000026, 0.00073, 0}
         self.appleCatched = False
         self.treeCatched = False
-
-
+        self.depthX = 180
+        self.depthY = 180
         #AprilTags
         self.center = 0
         self.tags = {}
@@ -89,7 +88,8 @@ class SpecificWorker(GenericWorker):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         #Marker is on X: 256 Y:256
         # cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
-        cv.drawMarker(color, (200, 200),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
+        cv.drawMarker(color, (self.depthX, self.depthY),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
+        cv.drawMarker(color, (256, 230),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
         plt.imshow(color)
 
 
@@ -115,9 +115,10 @@ class SpecificWorker(GenericWorker):
 
         if self.treeCatched == False:
             self.x, self.y, self.color = self.colorDetect(self.image, 36, 0, 0, 86, 255, 255) #green)
-        elif self.appleCatched == False:
+        elif self.state != 'turnleft':
             self.x, self.y, self.color = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red)
-        else:
+        
+        if self.state == 'turnleft':
             self.ar_detection(self.image)
 
         try: 
@@ -128,30 +129,30 @@ class SpecificWorker(GenericWorker):
 
     
     def appleSwitch(self):
-        
         if self.state == 'idle':
             self.idle()
         elif self.state == 'movex':
-            self.movex()
+            self.movex(True)
         elif self.state == 'movey':
-            self.movey()
+            self.movey(True)
         elif self.state == 'advance':
-            self.advance()
+            self.advance(True)
+        elif self.state == 'reverse':
+            self.reverse(True)         
+        elif self.state == 'turnleft': 
+            self.turn_left(True)
+        elif self.state == 'turnright':
+            self.turn_right(True)
+        elif self.state == 'pickapple':
+            self.pick_apple()
         elif self.state == 'drop':
             self.drop()
         elif self.state == 'stop':
             self.stop()
-        elif self.state == 'reverse':
-            self.reverse()         
-        elif self.state == 'turnleft': 
-            self.turn_left()
-        elif self.state == 'turnright':
-            self.turn_right()
         elif self.state == 'tag':
             self.tag()      
         elif self.state == 'tree':
             self.tree() 
-        
         else:
             self.error()
 
@@ -169,62 +170,85 @@ class SpecificWorker(GenericWorker):
 
     #State: idle
     def idle(self):
-        print("[ IDLE ] depth = ", self.depth_array[200][200])
+        print("[ IDLE ] depth = ", self.depth_array[self.depthX][self.depthY])
 
-        if self.depth_array[200][200] < 1:
-            self.moveDummy(x_=-0.002)
-        elif self.depth_array[200][200] > 9:
+        if self.depth_array[self.depthX][self.depthY] < 0.3:
+            self.moveDummy(x_= -0.002)
+        elif self.depth_array[self.depthX][self.depthY] > 0.6:
             self.moveDummy(x_= 0.002)
-
-        if self.x == 0:
-            print("Looking for tree")
-            self.state = 'tree'
-        if self.x > 0 and self.color == 86:     #tree detected
-            print("Tree detected")
+        elif self.depth_array[self.depthX][self.depthY] > 0.3 and self.depth_array[self.depthX][self.depthY] < 0.6 :
+            if self.treeCatched == False:
+                self.state = 'tree'
+            elif self.appleCatched == False:
+                self.state = 'pickapple'
+        
+     # State: home POSE: 0	-2.0e-01	+6.50e-01
+    #             ORI: 0	0	0
+    def tree(self):
+        print("[ TREE ] ")
+        print("x: ", self.x, " color: ", self.color)
+        if self.x > 0 and self.color == 86:     #SpecificWorker destructortree detected
+            print("[+++] Tree detected")
+            for x in range(15):
+                self.movex(False)
+                self.movey(False)
             self.treeCatched = True
+            self.state = 'idle'
+
+    def pick_apple(self):
+        print("[ LOOKING FOR APPLE ]:       ", self.appleCatched)
+        print("x: ", self.x, " color: ", self.color)
         if self.x > 0 and self.color == 10:     #apple detected
-            print("Apple detected")
+            print("[+++] Apple detected")
+            self.appleCatched = True
             self.state = 'movex'                #state = move x
+
     #State: move coordinate x
-    def movex(self):
-        if self.x > 260:
-            self.moveDummy(y_=-0.001)
-        if self.x < 260:
-            self.moveDummy(y_=0.001)
-        if self.x >= 250 or self.x <= 260:  
+    def movex(self, state):
+        if self.x > 256:
+            self.moveDummy(y_=-0.00125)
+        if self.x < 256:
+            self.moveDummy(y_=0.00125)
+
+        if self.x >= 255 or self.x <= 256:  
             print("[MOVE X] = ", self.x)  
-            self.state = 'movey'    #state = move y
+            if state == True:
+                self.state = 'movey'    #state = move y
 
     #State: move coordinate y
-    def movey(self):
-        if self.y > 235:
-            self.moveDummy(z_=0.001)
-        if self.y < 235:
-            self.moveDummy(z_=-0.001)
-        if self.y >= 220 or self.y <= 235:
+    def movey(self, state):
+        if self.y > 225:
+            self.moveDummy(z_=0.00125)
+        if self.y < 225:
+            self.moveDummy(z_=-0.00125)
+        if self.y >= 224 or self.y <= 225:
             print("[MOVE Y] = ", self.y)
-            self.state = 'advance'  #state = advance
+            if state == True:
+                self.state = 'advance'  #state = advance
 
     #State: advance until the suctionPad catches the apple
-    def advance(self):
-        print("[ADVANCE] depth = ", self.depth_array[200][200])
-        depth = self.depth_array[200][200]
-        if depth > 0.30: 
-            self.moveDummy(x_=0.01)
+    def advance(self, state):
+        print("[ADVANCE] depth = ", self.depth_array[self.depthX][self.depthY])
+        depth = self.depth_array[self.depthX][self.depthY]
+        if depth > 0.20: 
+            self.moveDummy(x_=0.003)
         else:
-            self.moveDummy(x_=0.005)
-        if (depth > 0.17 and depth < 0.185):
-            print("DEPTH < ", depth)
-            self.state = 'reverse'  #state = reverse
-        else:                
-            self.state = 'movex'    #state = move x
-    
+            self.moveDummy(x_=0.00125)
+
+        if state == True:
+            if depth > 0.165 and depth < 0.175 or self.y < 50:
+                print("[---] DEPTH < ", depth)
+                self.state = 'reverse'  #state = reverse
+            else:                
+                self.state = 'movex'    #state = move x
+
+        
     # State: drop
     def drop(self):
-        print("[ DROP ] depth: ", self.depth_array[200][200])
+        print("[ DROP ] depth: ", self.depth_array[self.depthX][self.depthY])
         self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", None)
+        self.n_tags = 0
         self.state = 'turnright' 
-        self.appleCatched = False
         self.treeCatched = False
     
     # State: stop
@@ -232,46 +256,52 @@ class SpecificWorker(GenericWorker):
         print("[ STOP ]")
 
     # State: REVERSE
-    def reverse(self):
-        print("[ REVERSE ] depth: ", self.depth_array[200][200])
+    def reverse(self, state):
+        print("[ REVERSE ] depth: ", self.depth_array[self.depthX][self.depthY])
         self.moveDummy(x_=-0.002)
-        if self.depth_array[200][200] >= 0.35:
-            self.state = 'turnleft'
-        self.appleCatched = True
+        if state == True:
+            if self.depth_array[self.depthX][self.depthY] >= 0.35:
+                self.state = 'turnleft'
+                self.appleCatched = False
 
      # State: turnleft
-    def turn_left(self):
-        print("[ TURN LEFT ] ", self.depth_array[200][200])
+    def turn_left(self, state):
+        print("[ TURN LEFT ] ", self.depth_array[self.depthX][self.depthY])
         if(self.n_tags == 0):        
             self.moveDummy(rz_=-0.007)
-            self.n_tags = 0
         else:
             print("             + TAG SPOTTED")
-            self.state = 'tag'
+            if state == True:
+                self.state = 'tag'
 
     # State: turnright
-    def turn_right(self):
-        print("[ TURN RIGHT ] depth", self.depth_array[200][200])
-        if(self.depth_array[200][200] > 0.5):
+    def turn_right(self, state):
+        print("[ TURN RIGHT ] depth", self.depth_array[self.depthX][self.depthY])
+        if(self.depth_array[self.depthX][self.depthY] > 0.5):
             self.moveDummy(rz_=0.005)
         else:
-            self.state = 'idle'
+            if state == True:
+                self.state = 'idle'
+                print("RECTIFIED TURN RIGHT")
+                for x in range(12):
+                    self.movex(False)
+                    self.movey(False)
+                    self.moveDummy(rz_=0.0025)
+               
 
     # State: tag
     def tag(self):
         print("[ TAG ] ")
-        # print("Centro X del tag: ",self.center[0])
-        # print("Centro Y del tag: ",self.center[1])
+        print("Centro X del tag: ",self.center[0])
+        print("Centro Y del tag: ",self.center[1])
+        self.x = self.center[0]
+        self.y = self.center[1]
+        print("TAG rectified")
+        for x in range(2):
+                self.movex(False)
+                self.movey(False)
+        self.n_tags = 0                
         self.state = 'drop'
-
-    # State: home POSE: 0	-2.0e-01	+6.50e-01
-    #             ORI: 0	0	0
-    def tree(self):
-        print("[ TREE ] ")
-        # self.moveDummy(x_=0.003)
-        self.treeCatched = False
-        self.state = 'idle'
-
 
     def error(self):
         print("Error en el switch")
@@ -283,6 +313,9 @@ class SpecificWorker(GenericWorker):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
         x = 0
         y = 0
+        x_ = 0
+        y_ = 0
+        first = False
         color = cv.cvtColor(color, cv.COLOR_RGB2BGR)
         
         hsv = cv.cvtColor(color, cv.COLOR_BGR2HSV)
@@ -300,6 +333,10 @@ class SpecificWorker(GenericWorker):
                 M = cv.moments(c)
                 x = int(M["m10"]/ M["m00"])
                 y = int(M["m01"]/ M["m00"])
+                if(first == False):
+                    x_ = x
+                    y_ = y
+                    first = True
 
                 cv.circle(color,(x,y),2,(0,255,0), 2)
                 # cv.putText(color, "rojo", (x-20, y-20), cv.FONT_HERSHEY_SIMPLEX,2, (255,255,255), 2)
@@ -307,7 +344,7 @@ class SpecificWorker(GenericWorker):
         color = cv.cvtColor(color, cv.COLOR_BGR2RGB)
 
         self.draw_camera(color, 'Drone Camera')
-        return (x, y, high_h)
+        return (x_, y_, high_h)
 
     def ar_detection(self, color_):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
@@ -318,7 +355,6 @@ class SpecificWorker(GenericWorker):
         camera_params = ( cameraMatrix[0,0], cameraMatrix[1,1], cameraMatrix[0,2], cameraMatrix[1,2] )
 
         tag_size = 0.065
-        # if(self.n_tags == 0):
         self.tags = self.at_detector.detect(gray, False, camera_params, tag_size)
         if(len(self.tags) == 1):
             print("[ INFO ] {} total AprilTags detected".format(len(self.tags)))
@@ -331,17 +367,13 @@ class SpecificWorker(GenericWorker):
                     tuple(tag.corners[idx, :].astype(int)), (0, 255, 0),thickness=2)
                     cv.circle(color, tuple(tag.center.astype(int)), 2, (0,255,0), 2)
                     self.center = tag.center.astype(int)
-                    
-                    print("Centro X del tag: ",self.center[0])
-                    print("Centro Y del tag: ",self.center[1])  
+                    # print("Centro X del tag: ",self.center[0])
+                    # print("Centro Y del tag: ",self.center[1])  
             
         self.draw_camera(color, 'Drone Camera')
 
     def startup_check(self):
         QTimer.singleShot(200, QApplication.instance().quit)
-
-
-
 
     # =============== Slots methods for State Machine ===================
     # ===================================================================
