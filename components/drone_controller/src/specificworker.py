@@ -66,6 +66,7 @@ class SpecificWorker(GenericWorker):
         self.color = 0
 
         #Timer
+        self.times = 0
         self.Period = 100
         if startup_check:
             self.startup_check()
@@ -114,21 +115,21 @@ class SpecificWorker(GenericWorker):
                 self.depth.width)
 
         if self.treeCatched == False:
-            self.x, self.y, self.color = self.colorDetect(self.image, 36, 0, 0, 86, 255, 255) #green)
+            self.x, self.y, self.color = self.colorDetect(self.image, 36, 0, 0, 86, 255, 255) #green
         elif self.state != 'turnleft':
-            self.x, self.y, self.color = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red)
+            self.x, self.y, self.color = self.colorDetect(self.image, 0, 50, 120, 10, 255, 255) #red
         
         if self.state == 'turnleft':
             self.ar_detection(self.image)
 
         try: 
-            self.appleSwitch()
+            self.mainSwitch()
 
         except Ice.Exception as e:
             print(e)
 
     
-    def appleSwitch(self):
+    def mainSwitch(self):
         if self.state == 'idle':
             self.idle()
         elif self.state == 'movex':
@@ -182,22 +183,29 @@ class SpecificWorker(GenericWorker):
             elif self.appleCatched == False:
                 self.state = 'pickapple'
         
-     # State: home POSE: 0	-2.0e-01	+6.50e-01
+    # State: home POSE: 0	-2.0e-01	+6.50e-01
     #             ORI: 0	0	0
     def tree(self):
         print("[ TREE ] ")
         print("x: ", self.x, " color: ", self.color)
-        if self.x > 0 and self.color == 86:     #SpecificWorker destructortree detected
+        if self.x > 0 and self.color == 86:     #tree detected
             print("[+++] Tree detected")
-            for x in range(15):
-                self.movex(False)
-                self.movey(False)
-            self.treeCatched = True
-            self.state = 'idle'
+            depth = self.depth_array[self.depthX][self.depthY]
+            if depth > 0.46:
+                self.treeCatched = True
+                self.state = 'idle'
+            else:
+                for x in range(2):
+                    self.reverse(False)
+                for x in range(2):
+                    self.movex(False)
+                for x in range(2): 
+                    self.movey(False)
 
     def pick_apple(self):
-        print("[ LOOKING FOR APPLE ]:       ", self.appleCatched)
+        print("[ LOOKING FOR APPLE ]:       ", self.depth_array[self.depthX][self.depthY])
         print("x: ", self.x, " color: ", self.color)
+        self.state = 'idle'
         if self.x > 0 and self.color == 10:     #apple detected
             print("[+++] Apple detected")
             self.appleCatched = True
@@ -209,34 +217,38 @@ class SpecificWorker(GenericWorker):
             self.moveDummy(y_=-0.00125)
         if self.x < 256:
             self.moveDummy(y_=0.00125)
-
+       
         if self.x >= 255 or self.x <= 256:  
             print("[MOVE X] = ", self.x)  
             if state == True:
                 self.state = 'movey'    #state = move y
+        
 
     #State: move coordinate y
     def movey(self, state):
         if self.y > 225:
             self.moveDummy(z_=0.00125)
-        if self.y < 225:
+        if self.y < 200:
             self.moveDummy(z_=-0.00125)
+            return
+        
         if self.y >= 224 or self.y <= 225:
             print("[MOVE Y] = ", self.y)
             if state == True:
                 self.state = 'advance'  #state = advance
+        
 
     #State: advance until the suctionPad catches the apple
     def advance(self, state):
         print("[ADVANCE] depth = ", self.depth_array[self.depthX][self.depthY])
         depth = self.depth_array[self.depthX][self.depthY]
-        if depth > 0.20: 
-            self.moveDummy(x_=0.003)
+        if depth > 0.18: 
+            self.moveDummy(x_=0.005)
         else:
             self.moveDummy(x_=0.00125)
 
         if state == True:
-            if depth > 0.165 and depth < 0.175 or self.y < 50:
+            if depth > 0.165 and depth < 0.175 or self.y < 50: 
                 print("[---] DEPTH < ", depth)
                 self.state = 'reverse'  #state = reverse
             else:                
@@ -246,25 +258,35 @@ class SpecificWorker(GenericWorker):
     # State: drop
     def drop(self):
         print("[ DROP ] depth: ", self.depth_array[self.depthX][self.depthY])
-        self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", None)
+        leave = RoboCompCoppeliaUtils.PoseType(x=1.00000000,y=1.00000000,z=1.00000000)
+        catch = RoboCompCoppeliaUtils.PoseType(x=0.00000000,y=0.00000000,z=0.00000000)
+        for x in range(100):
+            print("[ DETACHED ]")
+            self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", leave)
+            self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", catch)
+        
         self.n_tags = 0
-        self.state = 'turnright' 
         self.treeCatched = False
+        self.state = 'stop' 
     
     # State: stop
     def stop(self):
-        print("[ STOP ]")
+        for x in range(20):
+            print("[ STOP ]")
+        self.state = 'turnright'
+
 
     # State: REVERSE
     def reverse(self, state):
         print("[ REVERSE ] depth: ", self.depth_array[self.depthX][self.depthY])
-        self.moveDummy(x_=-0.002)
+        self.moveDummy(x_=-0.0025)
         if state == True:
             if self.depth_array[self.depthX][self.depthY] >= 0.35:
                 self.state = 'turnleft'
-                self.appleCatched = False
+                self.appleCatched = False  #apple detection is disabled
+                
 
-     # State: turnleft
+    # State: turnleft
     def turn_left(self, state):
         print("[ TURN LEFT ] ", self.depth_array[self.depthX][self.depthY])
         if(self.n_tags == 0):        
@@ -283,10 +305,11 @@ class SpecificWorker(GenericWorker):
             if state == True:
                 self.state = 'idle'
                 print("RECTIFIED TURN RIGHT")
-                for x in range(12):
+                for x in range(20):
                     self.movex(False)
                     self.movey(False)
                     self.moveDummy(rz_=0.0025)
+                
                
 
     # State: tag
@@ -298,8 +321,8 @@ class SpecificWorker(GenericWorker):
         self.y = self.center[1]
         print("TAG rectified")
         for x in range(2):
-                self.movex(False)
-                self.movey(False)
+            self.movex(False)
+            self.movey(False)
         self.n_tags = 0                
         self.state = 'drop'
 
@@ -311,10 +334,7 @@ class SpecificWorker(GenericWorker):
     # ====================================================
     def colorDetect(self, color_, low_h, low_s, low_v, high_h, high_s, high_v):
         color = np.frombuffer(color_.image, np.uint8).reshape(color_.height, color_.width, color_.depth)
-        x = 0
-        y = 0
-        x_ = 0
-        y_ = 0
+        x, y, x_, y_ = [0 for _ in range(4)]
         first = False
         color = cv.cvtColor(color, cv.COLOR_RGB2BGR)
         

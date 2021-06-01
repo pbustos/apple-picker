@@ -41,7 +41,6 @@ class SpecificWorker(GenericWorker):
         print('SpecificWorker destructor')
 
     def setParams(self, params):
-
         SCENE_FILE = '../../etc/basic_scene.ttt'
 
         self.pr = PyRep()
@@ -175,13 +174,13 @@ class SpecificWorker(GenericWorker):
     # ===================================================================
     def CoppeliaUtils_addOrModifyDummy(self, type, name, pose):
         if not Shape.exists(name):
-            print("DUMMY: "+ name+" doesn't exist")
+            print("DUMMY: "+ name +" doesn't exist")
         else:
             if type == RoboCompCoppeliaUtils.TargetTypes.HeadCamera:
                 self.move_quad_target([pose.x, pose.y, pose.z, pose.rz])
                 
             if type == RoboCompCoppeliaUtils.TargetTypes.Hand:
-                orientation = [1,1,1]
+                orientation = [pose.x, pose.y, pose.z]
                 target = Shape(name)
                 target.set_orientation(orientation,None)
                 # actual_orientation = target.get_orientation() #TODO
