@@ -9,21 +9,22 @@ etc/config
 ```
 you can find an example of a configuration file. We can find there the following lines:
 ```
-EXAMPLE HERE
+# Endpoints for subscriptions interfaces
+CameraRGBDSimpleProxy = camerargbdsimple:tcp -h localhost -p 10096
+CoppeliaUtilsProxy = coppeliautils:tcp -h localhost -p 10666
+
+# This property is used by the clients to connect to IceStorm.
+TopicManager.Proxy=IceStorm/TopicManager:default -p 9999
+
+Ice.MessageSizeMax=20004800
+Ice.Warn.Connections=0
+Ice.Trace.Network=0
+Ice.Trace.Protocol=0
 ```
 
 ## Starting the component
-To avoid changing the *config* file in the repository, we can copy it to the component's home directory, so changes will remain untouched by future git pulls:
-
+Run the script
 ```
-cd <drone_controller's path> 
-```
-```
-cp etc/config config
+./run.sh
 ```
 
-After editing the new config file we can run the component:
-
-```
-bin/drone_controller config
-```
