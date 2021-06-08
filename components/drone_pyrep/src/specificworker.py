@@ -182,9 +182,7 @@ class SpecificWorker(GenericWorker):
             if type == RoboCompCoppeliaUtils.TargetTypes.Hand:
                 orientation = [pose.x, pose.y, pose.z]
                 target = Shape(name)
-                target.set_orientation(orientation,None)
-                # actual_orientation = target.get_orientation() #TODO
-                
+                target.set_orientation(orientation,None)              
                 print("[+] APPLE RELEASE")
 
 

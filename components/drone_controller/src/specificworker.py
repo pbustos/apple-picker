@@ -90,6 +90,7 @@ class SpecificWorker(GenericWorker):
         #Marker is on X: 256 Y:256
         # cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
         cv.drawMarker(color, (self.depthX, self.depthY),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
+        cv.drawMarker(color, (self.depthX, self.depthY+150),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
         cv.drawMarker(color, (256, 230),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
         plt.imshow(color)
 
@@ -248,22 +249,33 @@ class SpecificWorker(GenericWorker):
             self.moveDummy(x_=0.00125)
 
         if state == True:
-            if depth > 0.165 and depth < 0.175 or self.y < 50: 
+            if depth > 0.165 and depth < 0.176 or self.y < 50: 
                 print("[---] DEPTH < ", depth)
                 self.state = 'reverse'  #state = reverse
             else:                
                 self.state = 'movex'    #state = move x
+
+            depth = self.depth_array[self.depthX][self.depthY+150]
+            if depth > 0.165 and depth < 0.177 or self.y < 50: 
+                print("[---] DEPTH < ", depth)
+                self.state = 'reverse'  #state = reverse
+            else:                
+                self.state = 'movex'    #state = move x
+
 
         
     # State: drop
     def drop(self):
         print("[ DROP ] depth: ", self.depth_array[self.depthX][self.depthY])
         leave = RoboCompCoppeliaUtils.PoseType(x=1.00000000,y=1.00000000,z=1.00000000)
-        catch = RoboCompCoppeliaUtils.PoseType(x=0.00000000,y=0.00000000,z=0.00000000)
-        for x in range(100):
+        #catch = RoboCompCoppeliaUtils.PoseType(x=0.00000000,y=0.00000000,z=0.00000000)
+        for x in range(1000):
             print("[ DETACHED ]")
             self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", leave)
-            self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", catch)
+        
+        # for x in range(100):
+        #     print("[ CATCH ]")
+        #     self.coppeliautils_proxy.addOrModifyDummy(RoboCompCoppeliaUtils.TargetTypes.Hand, "suctionPad_Dummy", catch)
         
         self.n_tags = 0
         self.treeCatched = False

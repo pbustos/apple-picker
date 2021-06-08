@@ -14,12 +14,12 @@ qdbus org.kde.yakuake /yakuake/tabs org.kde.yakuake.setTabTitle $sess 'drone_pyr
 sleep 3
 
 # JOYSTICKPUB
-qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.addSession
-sess=`qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.activeSessionId`
-qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.runCommand 'cd ~/external_control/joystickpublish'
-qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.runCommand 'bin/JoystickPublish etc/config-drone'
-qdbus org.kde.yakuake /yakuake/tabs org.kde.yakuake.setTabTitle $sess 'joystickpub'
-sleep 3
+# qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.addSession
+# sess=`qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.activeSessionId`
+# qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.runCommand 'cd ~/external_control/joystickpublish'
+# qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.runCommand 'bin/JoystickPublish etc/config-drone'
+# qdbus org.kde.yakuake /yakuake/tabs org.kde.yakuake.setTabTitle $sess 'joystickpub'
+# sleep 3
 
 # DRONE CONTROLLER
 qdbus org.kde.yakuake /yakuake/sessions org.kde.yakuake.addSession
