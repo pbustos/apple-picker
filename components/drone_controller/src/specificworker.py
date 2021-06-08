@@ -91,6 +91,8 @@ class SpecificWorker(GenericWorker):
         # cv.drawMarker(color, (int(color_.width/2), int(color_.height/2)),  (0, 255, 0), cv.MARKER_CROSS, 25, 2)
         cv.drawMarker(color, (self.depthX, self.depthY),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
         cv.drawMarker(color, (self.depthX, self.depthY+150),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
+        cv.drawMarker(color, (self.depthX+150, self.depthY),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
+        cv.drawMarker(color, (self.depthX+150, self.depthY+150),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
         cv.drawMarker(color, (256, 230),  (0, 0, 255), cv.MARKER_CROSS, 25, 2)
         plt.imshow(color)
 
@@ -249,18 +251,23 @@ class SpecificWorker(GenericWorker):
             self.moveDummy(x_=0.00125)
 
         if state == True:
-            if depth > 0.165 and depth < 0.176 or self.y < 50: 
-                print("[---] DEPTH < ", depth)
-                self.state = 'reverse'  #state = reverse
-            else:                
-                self.state = 'movex'    #state = move x
-
-            depth = self.depth_array[self.depthX][self.depthY+150]
-            if depth > 0.165 and depth < 0.177 or self.y < 50: 
-                print("[---] DEPTH < ", depth)
-                self.state = 'reverse'  #state = reverse
-            else:                
-                self.state = 'movex'    #state = move x
+            # if depth > 0.165 and depth < 0.176 or self.y < 50: 
+            #     print("[---] DEPTH < ", depth)
+            #     self.state = 'reverse'  #state = reverse
+            # else:                
+            #     self.state = 'movex'    #state = move x
+            self.closeDepth(self.depthX, self.depthY, 0, 0)
+            self.closeDepth(self.depthX, self.depthY, 0, 150)
+            self.closeDepth(self.depthX, self.depthY, 150, 0)
+            self.closeDepth(self.depthX, self.depthY, 150, 150)
+            
+    def closeDepth(self,x,y,offset_x, offset_y):
+        depth = self.depth_array[x+offset_x][y+offset_y]
+        if depth > 0.165 and depth < 0.177 or self.y < 50: 
+            print("[---] DEPTH < ", depth)
+            self.state = 'reverse'  #state = reverse
+        else:                
+            self.state = 'movex'    #state = move x
 
 
         
