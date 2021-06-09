@@ -7,10 +7,14 @@ Please follow these steps:
 
 - Install https://github.com/stepjam/PyRep
 
-. If you have a joystick, start ~/robocomp/components/robocomp-robolab/components/hardware/external_control/joystickpublish
-. Check the config file to set the ranges of the axis.
+- If you have a joystick, start ~/robocomp/components/robocomp-robolab/components/hardware/external_control/joystickpublish
+- Check the config file to set the ranges of the axis.
 
-
+- __Make sure sure first__ that you have commented this two lines, in case you have them in your __.bashrc__:
+```
+export LD_LIBRARY_PATH=$COPPELIASIM_ROOT 
+export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT
+```
 ## Configuration parameters
 As any other component, *dronePyRep* needs a configuration file to start. In
 ```
